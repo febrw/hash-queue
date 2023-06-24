@@ -33,8 +33,23 @@ LinkedHashmap *new_def_LinkedHashmap() {
     if (this == NULL) {
         return NULL;
     }
-    init_LinkedHashmap(this);
+    init_def_LinkedHashmap(this);
     return this;
+}
+
+/*
+    - Frees the entries in a table provided they are marked as occupied
+*/
+static void free_table(LinkedHashmap *this) {
+    // Free each entry in the hash table
+    for (int i = 0; i < this -> capacity; ++i) {
+        if (this -> occupied_index[i] != 0) {
+            free(this -> table[i]);
+        }
+    }
+    free(this -> table);
+    free(this -> occupied_index);
+    free(this);
 }
 
 
@@ -116,20 +131,7 @@ int init_rehashed_LinkedHashmap(LinkedHashmap* old, LinkedHashmap* new) {
     return 1;
 }
 
-/*
-    - Frees the entries in a table provided they are marked as occupied
-*/
-static void free_table(LinkedHashmap *this) {
-    // Free each entry in the hash table
-    for (int i = 0; i < this -> capacity; ++i) {
-        if (this -> occupied_index[i] != 0) {
-            free(this -> table[i]);
-        }
-    }
-    free(this -> table);
-    free(this -> occupied_index);
-    free(this);
-}
+
 
 //------------------------------ LINKED HASHMAP ADT IMPLEMENTATIONS ------------------------------
 
@@ -263,7 +265,7 @@ static thread *removeByID(u16 thread_id, void* queue) {
 
 }
 
-static thread *contains(u16 thread_id, void* queue) {
+static int contains(u16 thread_id, void* queue) {
     LinkedHashmap* map = (LinkedHashmap*) queue;
     const u16 table_mask = (map -> capacity) - 1;
     const u16 hash = map -> getHash(thread_id);
@@ -286,4 +288,8 @@ static thread *contains(u16 thread_id, void* queue) {
 static inline int isEmpty(void* queue) {
     LinkedHashmap * map = (LinkedHashmap*) queue;
     return (map -> head == NULL) && (map -> tail == NULL); // size == 0?
+}
+
+int main() {
+    return 0;
 }
