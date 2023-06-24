@@ -2,12 +2,12 @@
 #define LINKED_HASHMAP_H
 
 
-typedef unsigned short u16; // defined in types.h
+typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned char u8;
 
 #define INITIAL_CAPACITY 64
-#define REHASH_THRESHOLD 0.75
+#define REHASH_THRESHOLD 0.5
 #define FNV_OFFSET_BASIS 2166136261 // http://www.isthe.com/chongo/tech/comp/fnv/#FNV-param
 #define FNV_PRIME 16777619
 #define MASK_16 (((u32) 1<<16) -1)
@@ -28,6 +28,7 @@ struct Entry {
     Entry * next;
     thread * t; // value
     u16 hash; // key
+    u16 table_index; // allows dequeuing without search
 };
 
 
@@ -36,14 +37,14 @@ struct LinkedHashmap {
     // Common Queue Interface
     thread* (*dequeue) (void*);
     thread* (*removeByID) (u16, void*);
-    thread* (*contains) (u16, void*); // NULL if does not contain
+    int (*contains) (u16, void*);    // success/failure return value
     int (*enqueue) (thread*, void*); // success/failure return value
-    int (*isEmpty) (void*); // bool-ish
+    int (*isEmpty) (void*);          // success/failure return value
     // Linked hashmap only
     int size;
     int capacity; // must be a power of 2
     double load_factor; // [0,1]
-    double resize_threshold; // rehash when surpassed
+    double rehash_threshold; // rehash when surpassed
     Entry * head;
     Entry * tail;
     Entry ** table; // malloc table, uses double pointers to allow rehashing to maintain next and prev pointers
