@@ -191,7 +191,9 @@ static int enqueue(thread * t, void * queue) {
     }
 }
 
-
+/*
+    - Once a cell is deleted, continue iterating to 'repair' any out of place entries, or until an empty cell is found
+*/
 static thread *dequeue(void* queue) {
     LinkedHashmap* map = (LinkedHashmap*) queue;
     
@@ -200,12 +202,16 @@ static thread *dequeue(void* queue) {
     }
 
     Entry *entry = map -> head;
-    const u16 table_index = entry -> table_index;
+    u16 table_index = entry -> table_index;
 
     // Update map fields
     map -> occupied_index[table_index] = 0;
     map -> table[table_index] = NULL;
     -- map -> size;
+
+    // Continue forward search until empty found
+    ++table_index;
+    while (map -> occupied_index[table_index])
 
     // Update Linked List pointers
     if (map -> tail == map -> head) { // we are removing lone entry in map
