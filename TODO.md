@@ -1,6 +1,16 @@
 # Tasks
 
-- implement open addressing with linear probing
-- add spinlocks
-- implement robin-hood hashing
-- write test programs
+- enqueue
+- dequeue
+- contains
+- isEmpty (macro)
+- removeByID
+- rehash
+
+- fix hash functions
+
+
+
+- Enqueue:
+    - allows duplicate keys to be added, using linear probing
+    - how will removeByID work?
