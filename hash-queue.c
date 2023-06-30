@@ -25,6 +25,10 @@ static u16 FNV1A_Hash(u16 thread_id) {
     return hash;
 }
 
+static u16 ID_Hash(u16 thread_id) {
+    return thread_id;
+}
+
 //----------------------------------- CONSTRUCTORS + DESTRUCTOR -----------------------------------
 
 /*
@@ -139,7 +143,7 @@ int HashQueue_rehashed_init(HashQueue* old, HashQueue* new) {
 /*
     Returns -1 if enqueue failed, 1 if succeeded, 2 if succeeded but rehashing required.
 */
-static int enqueue(thread * t, void * queue) {
+static int HashQueue_enqueue(thread * t, void * queue) {
     HashQueue * map = (HashQueue*) queue;
     const u16 thread_id = t -> id;
     const u16 table_mask = (map -> capacity) - 1;
@@ -195,7 +199,7 @@ static int enqueue(thread * t, void * queue) {
 /*
     - Once a cell is deleted, continue iterating to 'repair' any out of place entries, or until an empty cell is found
 */
-static thread *dequeue(void* queue) {
+static thread *HashQueue_dequeue(void* queue) {
     HashQueue* map = (HashQueue*) queue;
     
     if (map -> isEmpty(map)) {

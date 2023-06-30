@@ -6,7 +6,7 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned char u8;
 
-#define INITIAL_CAPACITY 64
+#define INITIAL_CAPACITY 128
 #define REHASH_THRESHOLD 0.5
 #define FNV_OFFSET_BASIS 2166136261 // http://www.isthe.com/chongo/tech/comp/fnv/#FNV-param
 #define FNV_PRIME 16777619
@@ -30,7 +30,6 @@ struct Entry {
     u16 hash; // key
     u16 table_index; // allows dequeuing without search
 };
-
 
 
 struct HashQueue {
