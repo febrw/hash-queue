@@ -25,7 +25,7 @@ static u16 FNV1A_Hash(u16 thread_id) {
     return hash;
 }
 
-static u16 ID_Hash(u16 thread_id) {
+static inline u16 ID_Hash(u16 thread_id) {
     return thread_id;
 }
 

@@ -56,10 +56,6 @@ struct HashQueue {
 HashQueue *HashQueue_new();
 HashQueue *HashQueue_rehashed(HashQueue *);
 int HashQueue_rehashed_init(HashQueue*, HashQueue*); 
-
-/* needed?
-
 int HashQueue_init(HashQueue *); // success1/failure0 return value
-*/
 
 #endif /* HASH_QUEUE_H */
