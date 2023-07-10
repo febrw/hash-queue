@@ -17,6 +17,7 @@ typedef unsigned char u8;
 typedef struct thread thread;
 typedef struct Entry Entry;
 typedef struct HashQueue HashQueue;
+typedef struct QueueResultPair QueueResultPair;
 
 struct thread {
     u16 id;
@@ -26,19 +27,23 @@ struct thread {
 struct Entry {
     Entry * prev;
     Entry * next;
-    thread * t; // value
-    u16 hash; // key
-    u16 table_index; // allows dequeuing without search
+    thread * t;         // value
+    u16 hash;           // key
+    u16 table_index;    // allows dequeuing without search
 };
 
+struct QueueResultPair {
+    void *queue;        // in case of rehashing, new memory
+    int enqueue_ret;    // Enqueue's return value
+};
 
 struct HashQueue {
     // Common Queue Interface
-    thread* (*dequeue) (void*);
-    thread* (*removeByID) (u16, void*);
-    int (*contains) (u16, void*);    // success/failure return value
-    int (*enqueue) (thread*, void*); // success/failure return value
-    int (*isEmpty) (void*);          // success/failure return value
+    void* (*dequeue) (void*);                       // Input: queue. Output: dequeued element       
+    void* (*removeByID) (u16, void*);               // Inputs: ID, queue. Output: removed element
+    int (*contains) (u16, void*);                   // success/failure return value
+    QueueResultPair (*enqueue) (void*, void*);      // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
+    int (*isEmpty) (void*);                         // success/failure return value
     // Hash Queue only
     int size;
     int capacity; // must be a power of 2
@@ -56,6 +61,6 @@ struct HashQueue {
 HashQueue *HashQueue_new();
 HashQueue *HashQueue_rehashed(HashQueue *);
 int HashQueue_rehashed_init(HashQueue*, HashQueue*); 
-int HashQueue_init(HashQueue *); // success1/failure0 return value
+int HashQueue_init(HashQueue *); // success/failure
 
 #endif /* HASH_QUEUE_H */

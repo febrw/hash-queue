@@ -57,6 +57,9 @@ int HashQueue_init(HashQueue *this) {
     return 1;
 }
 
+/*
+    - Allocates Memory for the HashQueue, then populates with HashQueue_init
+*/
 HashQueue *HashQueue_new() {
     HashQueue *this = malloc(sizeof(HashQueue));
     if (this == NULL) {
@@ -89,7 +92,6 @@ static void HashQueue_free(HashQueue *this) {
     - Copies each Entry pointer into its new table slot
     - Sets occupied fields to zero in old table so entries are not freed
     - Frees the old table
-
 */
 int HashQueue_rehashed_init(HashQueue* old, HashQueue* new) {
     // New table initialisation
@@ -143,7 +145,7 @@ int HashQueue_rehashed_init(HashQueue* old, HashQueue* new) {
 /*
     Returns -1 if enqueue failed, 1 if succeeded, 2 if succeeded but rehashing required.
 */
-static int HashQueue_enqueue(thread * t, void * queue) {
+static QueueResultPair HashQueue_enqueue(thread * t, void * queue) {
     HashQueue * map = (HashQueue*) queue;
     const u16 thread_id = t -> id;
     const u16 table_mask = (map -> capacity) - 1;
