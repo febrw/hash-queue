@@ -32,9 +32,15 @@ struct Entry {
     u16 table_index;    // allows dequeuing without search
 };
 
+/*
+    Enqueue may require rehashing, changing the queue's pointer
+    The new address is returned along with the enqueue result (success/failure)
+
+    The rehash procedure will also return a QueueResultPair
+*/
 struct QueueResultPair {
     void *queue;        // in case of rehashing, new memory
-    int enqueue_ret;    // Enqueue's return value
+    int ret;            // success/failure value
 };
 
 struct HashQueue {
@@ -59,8 +65,7 @@ struct HashQueue {
 
 
 HashQueue *HashQueue_new();
-HashQueue *HashQueue_rehashed(HashQueue *);
-int HashQueue_rehashed_init(HashQueue*, HashQueue*); 
-int HashQueue_init(HashQueue *); // success/failure
+int HashQueue_init(HashQueue*);
+QueueResultPair HashQueue_rehash(HashQueue*); 
 
 #endif /* HASH_QUEUE_H */

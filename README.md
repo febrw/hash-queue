@@ -1,1 +1,1 @@
-# Linked Hashmap
+# HashQueue

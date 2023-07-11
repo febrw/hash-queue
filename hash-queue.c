@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 //---------------------------------------- HASH FUNCTIONS ----------------------------------------
+// NYI
 static u16 FNV1_Hash(u16 thread_id) {
     u32 hash = FNV_OFFSET_BASIS;
     for (int i = 0; i < 32; i += 8) {
@@ -13,7 +14,7 @@ static u16 FNV1_Hash(u16 thread_id) {
     hash = (u16) (hash >> 16) ^ (hash & MASK_16);
     return hash;
 }
-
+// NYI
 static u16 FNV1A_Hash(u16 thread_id) {
     u32 hash = FNV_OFFSET_BASIS;
     for (int i = 0; i < 32; i += 8) {
@@ -29,115 +30,6 @@ static inline u16 ID_Hash(u16 thread_id) {
     return thread_id;
 }
 
-//----------------------------------- CONSTRUCTORS + DESTRUCTOR -----------------------------------
-
-/*
-    Returns 0 if any malloc failed, 1 otherwise.
-*/
-int HashQueue_init(HashQueue *this) {
-    this -> size = 0;
-    this -> capacity = INITIAL_CAPACITY;
-    this -> load_factor = 0.0;
-    this -> rehash_threshold = REHASH_THRESHOLD;
-    this -> head = NULL;
-    this -> tail = NULL;
-    this -> table = malloc(INITIAL_CAPACITY * sizeof(Entry*));
-    if (this -> table == NULL) {
-        return 0;
-    }
-    this -> occupied_index = malloc((INITIAL_CAPACITY) * sizeof(u8));
-    if (this -> occupied_index == NULL) {
-        return 0;
-    }
-    for (int i = 0; i < INITIAL_CAPACITY; ++i) {
-        this -> occupied_index[i] = 0; // all unoccupied to begin
-    }
-    this -> getHash = FNV1A_Hash;
-    this -> freeQueue = HashQueue_free;
-    return 1;
-}
-
-/*
-    - Allocates Memory for the HashQueue, then populates with HashQueue_init
-*/
-HashQueue *HashQueue_new() {
-    HashQueue *this = malloc(sizeof(HashQueue));
-    if (this == NULL) {
-        return NULL;
-    }
-    HashQueue_init(this);
-    return this;
-}
-
-/*
-    - Frees the entries in a table provided they are marked as occupied
-*/
-static void HashQueue_free(HashQueue *this) {
-    // Free each entry in the hash table
-    for (int i = 0; i < this -> capacity; ++i) {
-        if (this -> occupied_index[i] != 0) {
-            free(this -> table[i]);
-        }
-    }
-    free(this -> table);
-    free(this -> occupied_index);
-    free(this);
-}
-
-
-
-
-/*
-    - Doubles the table size
-    - Copies each Entry pointer into its new table slot
-    - Sets occupied fields to zero in old table so entries are not freed
-    - Frees the old table
-*/
-int HashQueue_rehashed_init(HashQueue* old, HashQueue* new) {
-    // New table initialisation
-    new -> getHash = FNV1A_Hash;
-    new -> freeQueue = HashQueue_free;
-    new -> capacity = old -> capacity * 2;
-    new -> rehash_threshold = REHASH_THRESHOLD;
-    new -> head = old -> head;
-    new -> tail = old -> tail;
-    new -> table = malloc((new -> capacity) * sizeof(Entry*));
-    if (new -> table == NULL) {
-        return 0;
-    }
-
-    new -> occupied_index = malloc((new -> capacity) * sizeof(u8));
-    if (new -> occupied_index == NULL) {
-        return 0;
-    }
-
-    for (int i = 0; i < new -> capacity; ++i) {
-        new -> occupied_index[i] = 0;
-    }
-
-    // Rehashing Procedure
-    const u16 table_mask = (new -> capacity) - 1;
-    u16 table_index;
-    for (int i = 0; i < old -> capacity; ++i) {
-        if (old -> occupied_index[i] != 0) {
-            Entry * entry = old -> table[i];
-
-            table_index = (entry -> hash) & table_mask;
-            while (new -> occupied_index[table_index] != 0) {
-                table_index = (table_index + 1) & table_mask;
-            }
-            new -> table[table_index] = entry;
-            new -> occupied_index[table_index] = 1;
-
-            old -> occupied_index[i] = 0; // set to zero so entries will not be freed
-        }
-    }
-
-    HashQueue_free(old);
-
-    return 1;
-}
-
 
 
 //------------------------------ LINKED HASHMAP ADT IMPLEMENTATIONS ------------------------------
@@ -145,30 +37,35 @@ int HashQueue_rehashed_init(HashQueue* old, HashQueue* new) {
 /*
     Returns -1 if enqueue failed, 1 if succeeded, 2 if succeeded but rehashing required.
 */
-static QueueResultPair HashQueue_enqueue(thread * t, void * queue) {
-    HashQueue * map = (HashQueue*) queue;
+static QueueResultPair HashQueue_enqueue(void * thread_ptr, void * queue) {
+
+    thread * t = (thread*) thread_ptr;
+    HashQueue *hash_queue = (HashQueue*) queue;
     const u16 thread_id = t -> id;
-    const u16 table_mask = (map -> capacity) - 1;
-    const u16 hash = map -> getHash(thread_id);
+    const u16 table_mask = (hash_queue -> capacity) - 1;
+    const u16 hash = hash_queue -> getHash(thread_id);
     u16 table_index = hash & table_mask;
 
     int slots_searched = 0;
-    while (map -> occupied_index[table_index] != 0 && slots_searched < map -> capacity) // iterate while positions unavailable
+    while (hash_queue -> occupied_index[table_index] != 0 && slots_searched < hash_queue -> capacity) // iterate while positions unavailable
     {
         table_index = (table_index + 1) & table_mask;
         ++slots_searched;
     }
 
-    if (slots_searched == map -> capacity) {
+    if (slots_searched == hash_queue -> capacity) {
         printf("Table somehow full.\n");
-        return -1;
+        QueueResultPair result = {queue, 0};        // return old queue
+        return result;
     }
+
 
     // Create new entry
     Entry * new_entry = malloc(sizeof(Entry));
     if (new_entry == NULL) {
-        printf("Entry malloc failed.\n");
-        return -1;
+        printf("Entry memory allocation failed.\n");
+        QueueResultPair result = {queue, 0};        // return old queue
+        return result;
     }
 
     new_entry -> t = t;
@@ -176,32 +73,38 @@ static QueueResultPair HashQueue_enqueue(thread * t, void * queue) {
     new_entry -> table_index = table_index;
     
     // Linked List pointers update
-    if (map -> isEmpty(map)) {
-        map -> tail = map -> head = new_entry;
+    if (hash_queue -> isEmpty(hash_queue)) {
+        hash_queue -> tail = hash_queue -> head = new_entry;
     } else {
-        new_entry -> prev = map -> tail;
+        new_entry -> prev = hash_queue -> tail;
         new_entry -> next = NULL;
-        map -> tail -> prev = new_entry;
-        map -> tail = new_entry;
+        hash_queue -> tail -> prev = new_entry;
+        hash_queue -> tail = new_entry;
     }
     
 
-    map -> table[table_index] = new_entry;
-    map -> occupied_index[table_index] = 1;
-    ++ map -> size;
+    hash_queue -> table[table_index] = new_entry;
+    hash_queue -> occupied_index[table_index] = 1;
+    ++ hash_queue -> size;
 
-    map -> load_factor = (double) map -> size / map -> capacity;
-    if (map -> load_factor > REHASH_THRESHOLD) {
-        return 2;
+    hash_queue -> load_factor = (double) hash_queue -> size / hash_queue -> capacity;
+    QueueResultPair result;
+
+    // Check if rehashing required
+    if (hash_queue -> load_factor > REHASH_THRESHOLD) {
+        result = HashQueue_rehash(hash_queue);
     } else {
-        return 1;
+        result.queue = (void*) hash_queue;
+        result.ret = 1;
     }
+    
+    return result;
 }
 
 /*
     - Once a cell is deleted, continue iterating to 'repair' any out of place entries, or until an empty cell is found
 */
-static thread *HashQueue_dequeue(void* queue) {
+static void *HashQueue_dequeue(void* queue) {
     HashQueue* map = (HashQueue*) queue;
     
     if (map -> isEmpty(map)) {
@@ -255,11 +158,11 @@ static thread *HashQueue_dequeue(void* queue) {
 
     thread *thread = entry -> t;
     free(entry);
-    return thread;
+    return (void*) thread;
 
 }
 
-static thread *removeByID(u16 thread_id, void* queue) {
+static void *HashQueue_removeByID(u16 thread_id, void* queue) {
     HashQueue* map = (HashQueue*) queue;
     const u16 table_mask = (map -> capacity) - 1;
     const u16 hash = map -> getHash(thread_id);
@@ -291,7 +194,7 @@ static thread *removeByID(u16 thread_id, void* queue) {
             -- map -> size;                         // record size change
             thread* found = curr -> t;
             free(curr);                             // and free its storage
-            return found;
+            return (void*) found;
         } else {
             table_index = (table_index + 1) & table_mask;
             ++slots_searched;
@@ -302,7 +205,7 @@ static thread *removeByID(u16 thread_id, void* queue) {
 
 }
 
-static int contains(u16 thread_id, void* queue) {
+static int HashQueue_contains(u16 thread_id, void* queue) {
     HashQueue* map = (HashQueue*) queue;
     const u16 table_mask = (map -> capacity) - 1;
     const u16 hash = map -> getHash(thread_id);
@@ -322,7 +225,137 @@ static int contains(u16 thread_id, void* queue) {
     return 0;
 }
 
-static inline int isEmpty(void* queue) {
+static inline int HashQueue_isEmpty(void* queue) {
     HashQueue * map = (HashQueue*) queue;
     return (map -> head == NULL) && (map -> tail == NULL); // size == 0?
+}
+
+//----------------------------------- CONSTRUCTORS + DESTRUCTOR -----------------------------------
+
+/*
+    - Frees the entries in a table provided they are marked as occupied
+*/
+static void HashQueue_free(HashQueue *this) {
+    // Free each entry in the hash table
+    for (int i = 0; i < this -> capacity; ++i) {
+        if (this -> occupied_index[i] != 0) {
+            free(this -> table[i]);
+        }
+    }
+    free(this -> table);
+    free(this -> occupied_index);
+    free(this);
+}
+
+
+/*
+    Returns 0 if any malloc failed, 1 otherwise.
+*/
+int HashQueue_init(HashQueue *this) {
+    this -> size = 0;
+    this -> capacity = INITIAL_CAPACITY;
+    this -> load_factor = 0.0;
+    this -> rehash_threshold = REHASH_THRESHOLD;
+    this -> head = NULL;
+    this -> tail = NULL;
+    this -> table = malloc(INITIAL_CAPACITY * sizeof(Entry*));
+    if (this -> table == NULL) {
+        return 0;
+    }
+    this -> occupied_index = malloc((INITIAL_CAPACITY) * sizeof(u8));
+    if (this -> occupied_index == NULL) {
+        return 0;
+    }
+    for (int i = 0; i < INITIAL_CAPACITY; ++i) {
+        this -> occupied_index[i] = 0; // all unoccupied to begin
+    }
+    this -> getHash = ID_Hash;
+    this -> freeQueue = HashQueue_free;
+    this -> dequeue = HashQueue_dequeue;
+    this -> enqueue = HashQueue_enqueue;
+    this -> contains = HashQueue_contains;
+    this -> isEmpty = HashQueue_isEmpty;
+    return 1;
+}
+
+/*
+    - Allocates Memory for the HashQueue, then populates with HashQueue_init
+*/
+HashQueue *HashQueue_new() {
+    HashQueue *this = malloc(sizeof(HashQueue));
+    if (this == NULL) {
+        return NULL;
+    }
+    if (HashQueue_init(this) == 0) { // if some memory allocoation failed during construction
+        return NULL;
+    } else {
+        return this;
+    }
+}
+
+
+/*
+    - Doubles the table size
+    - Copies each Entry pointer into its new table slot
+    - Sets occupied fields to zero in old table so entries are not freed
+    - Frees the old table
+*/
+QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
+    // New table initialisation
+    HashQueue * new_queue = malloc(sizeof(HashQueue));
+
+    if (new_queue == NULL) {    // If memory allocation failed return the old queue
+        QueueResultPair result = {(void*) old_queue, 0};
+        return result;
+    }
+
+    new_queue -> size = old_queue -> size;
+    new_queue -> capacity = (old_queue -> capacity) * 2;
+    new_queue -> load_factor = (double) new_queue -> size / new_queue -> capacity;
+    new_queue -> rehash_threshold = REHASH_THRESHOLD;
+
+    new_queue -> head = old_queue -> head;
+    new_queue -> tail = old_queue -> tail;
+    new_queue -> table = malloc((new_queue -> capacity) * sizeof(Entry*));
+    if (new_queue -> table == NULL) {
+        // returns the old queue as malloc failed
+        QueueResultPair result = {(void*) old_queue, 0};
+    }
+
+    new_queue -> occupied_index = malloc((new_queue -> capacity) * sizeof(u8));
+    if (new_queue -> occupied_index == NULL) {
+        QueueResultPair result = {(void*) old_queue, 0};
+        return result;
+    }
+
+    new_queue -> getHash = ID_Hash;
+    new_queue -> freeQueue = HashQueue_free;
+
+    // Set occupied indices to 0 to begin
+    for (int i = 0; i < new_queue -> capacity; ++i) {
+        new_queue -> occupied_index[i] = 0;
+    }
+
+    // Rehashing Procedure
+    const u16 table_mask = (new_queue -> capacity) - 1;
+    u16 table_index;
+    for (int i = 0; i < old_queue -> capacity; ++i) {
+        if (old_queue -> occupied_index[i] != 0) {
+            Entry * entry = old_queue -> table[i];
+
+            table_index = (entry -> hash) & table_mask;
+            while (new_queue -> occupied_index[table_index] != 0) {
+                table_index = (table_index + 1) & table_mask;
+            }
+            new_queue -> table[table_index] = entry;
+            new_queue -> occupied_index[table_index] = 1;
+
+            old_queue -> occupied_index[i] = 0; // set to zero so entries will not be freed
+        }
+    }
+
+    HashQueue_free(old_queue);
+
+    QueueResultPair result = {(void*) new_queue, 1};
+    return result;
 }
