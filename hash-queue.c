@@ -107,28 +107,30 @@ static QueueResultPair HashQueue_enqueue(void * thread_ptr, void * queue) {
     - Once a cell is deleted, continue iterating to 'repair' any out of place entries, or until an empty cell is found
 */
 static void *HashQueue_dequeue(void* queue) {
-    HashQueue* map = (HashQueue*) queue;
+    HashQueue* hashqueue = (HashQueue*) queue;
     
-    if (map -> isEmpty(map)) {
+    if (hashqueue -> isEmpty(hashqueue)) {
         return NULL;
     }
 
-    Entry *entry = map -> head;
+    Entry *entry = hashqueue -> head;
     const u16 table_index = entry -> table_index;
 
-    // Update map fields
-    map -> occupied_index[table_index] = 0;
-    map -> table[table_index] = NULL;
-    -- map -> size;
+    // Update hashqueue fields
+    hashqueue -> occupied_index[table_index] = 0;
+    hashqueue -> table[table_index] = NULL;
+    -- hashqueue -> size;
+    hashqueue -> load_factor = (double) hashqueue -> size / hashqueue -> capacity;
+    
 
     // Update Linked List pointers
-    if (map -> tail == map -> head) {   // we are removing lone entry in map
-        map -> tail = NULL;
-        map -> head = NULL;
+    if (hashqueue -> tail == hashqueue -> head) {   // we are removing lone entry in hashqueue
+        hashqueue -> tail = NULL;
+        hashqueue -> head = NULL;
     } else {                            // there is at least one other entry
         Entry * next = entry -> next;
         next -> prev = NULL;
-        map -> head = next;
+        hashqueue -> head = next;
     }
     
     /*  Table Repair procedure
@@ -137,24 +139,31 @@ static void *HashQueue_dequeue(void* queue) {
         - If it is less than the index we emptied, move this entry into the empty index
         - continue until we find an empty slot
     */
-    const u16 table_mask = (map -> capacity) - 1;
+
+   /*
+        TODO:
+        -   refactor into a method, so that removeByID also uses table repair procedure
+   
+   */
+    const u16 table_mask = (hashqueue -> capacity) - 1;
     u16 empty_index = table_index;                                          // stores the empty slot which we want to fill with an 'out of place' entry
     u16 inspect_index = (empty_index + 1) & table_mask;                     // we inspect the following index
     u16 ideal_index;                                                        // will store where an entry would ideally be placed
 
-    while (map -> occupied_index[inspect_index] != 0) {
-        ideal_index = (map -> table[inspect_index] -> hash) & table_mask;   // stores the index would the current entry ideally go
+    while (hashqueue -> occupied_index[inspect_index] != 0) {
+        ideal_index = (hashqueue -> table[inspect_index] -> hash) & table_mask;     // stores the index would the current entry ideally go
 
-        if (ideal_index != inspect_index) {                                 // current entry is 'out of place'
-            map -> table[empty_index] = map -> table[inspect_index];        // store the out of place entry into the empty slot
-            map -> table[inspect_index] = NULL;                             // empty the inspect index, as we have moved the entry
-            map -> occupied_index[empty_index] = 1;
-            map -> occupied_index[inspect_index] = 0;                       // record movement in occupation indexes
+        if (ideal_index != inspect_index) {                                         // current entry is 'out of place'
+            hashqueue -> table[empty_index] = hashqueue -> table[inspect_index];    // store the out of place entry into the empty slot
+            hashqueue -> table[empty_index] -> table_index = empty_index;
+            hashqueue -> table[inspect_index] = NULL;                               // empty the inspect index, as we have moved the entry
+            hashqueue -> occupied_index[empty_index] = 1;
+            hashqueue -> occupied_index[inspect_index] = 0;                         // record movement in occupation indexes
 
             empty_index = inspect_index;                                    
         } 
         
-        inspect_index = (inspect_index + 1) & table_mask;                   // move on to inspect next slot
+        inspect_index = (inspect_index + 1) & table_mask;                           // move on to inspect next slot
         
     }
 
@@ -165,35 +174,35 @@ static void *HashQueue_dequeue(void* queue) {
 }
 
 static void *HashQueue_removeByID(u16 thread_id, void* queue) {
-    HashQueue* map = (HashQueue*) queue;
-    const u16 table_mask = (map -> capacity) - 1;
-    const u16 hash = map -> getHash(thread_id);
+    HashQueue* hashqueue = (HashQueue*) queue;
+    const u16 table_mask = (hashqueue -> capacity) - 1;
+    const u16 hash = hashqueue -> getHash(thread_id);
     u16 table_index = hash & table_mask;
 
     int slots_searched = 0;
-    while (slots_searched < map -> capacity)
+    while (slots_searched < hashqueue -> capacity)
     {
-        Entry* curr = map -> table[table_index];
+        Entry* curr = hashqueue -> table[table_index];
 
         if (curr -> t -> id == thread_id) { // Found
             Entry * prev = curr -> prev;
             Entry * next = curr -> next;
-            if (prev == NULL && next == NULL) { // removing lone entry in the map
-                map -> head = map -> tail = NULL;
+            if (prev == NULL && next == NULL) { // removing lone entry in the hashqueue
+                hashqueue -> head = hashqueue -> tail = NULL;
             } else if (prev == NULL) {             // we are removing the HEAD -- TEST
                 next -> prev = NULL;    // remove next queue node's pointer to curr
-                map -> head = next;    // update the head of the list
+                hashqueue -> head = next;    // update the head of the list
             } else if (next == NULL) {  // we are removing the TAIL -- TEST
                 prev -> next = NULL;
-                map -> tail = prev;
+                hashqueue -> tail = prev;
             } else {                    // we are removing an intermediate node
                 next -> prev = prev;
                 prev -> next = next;
             }
 
-            map -> occupied_index[table_index] = 0; // mark deleted
-            map -> table[table_index] = NULL;       // remove entry from table
-            -- map -> size;                         // record size change
+            hashqueue -> occupied_index[table_index] = 0; // mark deleted
+            hashqueue -> table[table_index] = NULL;       // remove entry from table
+            -- hashqueue -> size;                         // record size change
             thread* found = curr -> t;
             free(curr);                             // and free its storage
             return (void*) found;
@@ -208,15 +217,15 @@ static void *HashQueue_removeByID(u16 thread_id, void* queue) {
 }
 
 static int HashQueue_contains(u16 thread_id, void* queue) {
-    HashQueue* map = (HashQueue*) queue;
-    const u16 table_mask = (map -> capacity) - 1;
-    const u16 hash = map -> getHash(thread_id);
+    HashQueue* hashqueue = (HashQueue*) queue;
+    const u16 table_mask = (hashqueue -> capacity) - 1;
+    const u16 hash = hashqueue -> getHash(thread_id);
     u16 table_index = hash & table_mask;
 
     int slots_searched = 0;
-    while (slots_searched < map -> capacity)
+    while (slots_searched < hashqueue -> capacity)
     {
-        Entry* curr = map -> table[table_index];
+        Entry* curr = hashqueue -> table[table_index];
         if (curr -> t -> id == thread_id) {
             return 1;
         } else {
@@ -228,8 +237,8 @@ static int HashQueue_contains(u16 thread_id, void* queue) {
 }
 
 static inline int HashQueue_isEmpty(void* queue) {
-    HashQueue * map = (HashQueue*) queue;
-    return (map -> head == NULL) && (map -> tail == NULL); // size == 0?
+    HashQueue * hashqueue = (HashQueue*) queue;
+    return (hashqueue -> head == NULL) && (hashqueue -> tail == NULL); // size == 0?
 }
 
 //----------------------------------- CONSTRUCTORS + DESTRUCTOR -----------------------------------
