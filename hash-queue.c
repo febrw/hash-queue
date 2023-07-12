@@ -68,6 +68,8 @@ static QueueResultPair HashQueue_enqueue(void * thread_ptr, void * queue) {
         return result;
     }
 
+    new_entry -> prev = NULL;
+    new_entry -> next = NULL;
     new_entry -> t = t;
     new_entry -> hash = hash;
     new_entry -> table_index = table_index;
@@ -78,7 +80,7 @@ static QueueResultPair HashQueue_enqueue(void * thread_ptr, void * queue) {
     } else {
         new_entry -> prev = hash_queue -> tail;
         new_entry -> next = NULL;
-        hash_queue -> tail -> prev = new_entry;
+        hash_queue -> tail -> next = new_entry;
         hash_queue -> tail = new_entry;
     }
     
@@ -95,7 +97,7 @@ static QueueResultPair HashQueue_enqueue(void * thread_ptr, void * queue) {
         result = HashQueue_rehash(hash_queue);
     } else {
         result.queue = (void*) hash_queue;
-        result.ret = 1;
+        result.result = 1;
     }
     
     return result;

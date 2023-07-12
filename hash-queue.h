@@ -40,7 +40,7 @@ struct Entry {
 */
 struct QueueResultPair {
     void *queue;        // in case of rehashing, new memory
-    int ret;            // success/failure value
+    int result;            // success/failure value
 };
 
 struct HashQueue {
