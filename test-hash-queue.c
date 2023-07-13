@@ -213,13 +213,23 @@ static void dequeueTableMended(void) {
 
 
 /*
+    Before:
+    Slot    thread_id
+    0       0
+    1       128
+    2       256
+    3       3
+    4       1
+    5       129
+
     After dequeueing thread with id 0, we expect 4 deletion restorations to take place:
     -   thread id 128 (slot 1) should move to slot 0 (just vacated by id 0)
     -   thread id 256 (slot 2) should move to slot 1 (just vacated by id 128)
     -   thread id 1 (slot 4) should move to slot 2 (just vacated by id 256)
     -   thread id 129 (slot 5) should move to slot 4 (just vacated by id 1)
+    -   slot 5 should be empty
 */
-static void dequeueTableRepairTest(void) {
+static void dequeueTableRepairTest1(void) {
     for (int i = 0; i <= 5; ++i) {
         hashqueue -> enqueue((void*) overlapping_threads[i],(void*) hashqueue);
     }
@@ -240,6 +250,10 @@ static void dequeueTableRepairTest(void) {
     assert(hashqueue -> table[2] -> table_index == 2);
     assert(hashqueue -> occupied_index[2] == 1);
 
+    assert(hashqueue -> table[3] -> t -> id == 3);          // id 3 did not move
+    assert(hashqueue -> table[3] -> table_index == 3);
+    assert(hashqueue -> occupied_index[3] == 1);
+
     assert(hashqueue -> table[4] -> t -> id == 129);        // id 128 moved to slot 0
     assert(hashqueue -> table[4] -> table_index == 4);
     assert(hashqueue -> occupied_index[4] == 1);
@@ -249,6 +263,193 @@ static void dequeueTableRepairTest(void) {
 }
 
 
+/*
+    RemoveByID tests
+*/
+
+static void removeByIDCorrectElement(void) {
+    for (int i = 0; i < 10; ++i) {
+        hashqueue -> enqueue((void*) threads[i], (void*) hashqueue);
+    }
+
+    thread *removed = (thread*) hashqueue -> removeByID(5, (void*) hashqueue);
+    assert(removed -> id == 5);
+}
+
+static void removeByIDSizeChanged(void) {
+    for (int i = 0; i < 10; ++i) {
+        hashqueue -> enqueue((void*) threads[i], (void*) hashqueue);
+    }
+
+    assert(hashqueue -> size == 10);
+    hashqueue -> removeByID(0, (void*) hashqueue);
+    assert(hashqueue -> size == 9);
+}
+
+static void removeByIDLoadFactorChanged(void) {
+    for (int i = 0; i < 10; ++i) {
+        hashqueue -> enqueue((void*) threads[i], (void*) hashqueue);
+    }
+
+    assert(hashqueue -> load_factor == (double) 10 / 128);
+    hashqueue -> removeByID(0, (void*) hashqueue);
+    assert(hashqueue -> load_factor == (double) 9 / 128);
+
+}
+
+static void removeByIDNotFound(void) {
+    for (int i = 0; i < 10; ++i) {
+        hashqueue -> enqueue((void*) threads[i], (void*) hashqueue);
+    }
+
+    thread *found = (thread*) hashqueue -> removeByID(42, (void*) hashqueue);
+    assert(found == NULL);
+    assert(hashqueue -> size == 10);
+}
+
+static void removeByIDIntermediatePointersMended(void) {
+    // Enqueue 10 threads, ids [0..9]
+    for (int i = 0; i < 10; ++i) {
+        hashqueue -> enqueue((void*) threads[i], (void*) hashqueue);
+    }
+    hashqueue -> removeByID(5, (void*) hashqueue);
+    Entry *entry4 = hashqueue -> table[4];
+    Entry *entry6 = hashqueue -> table[6];
+
+    assert(entry4 -> next == entry6);
+    assert(entry6 -> prev == entry4);
+}
+
+static void removeByIDIntermediateTableAmended(void) {
+    // Enqueue 10 threads, ids [0..9]
+    for (int i = 0; i < 10; ++i) {
+        hashqueue -> enqueue((void*) threads[i], (void*) hashqueue);
+    }
+
+    hashqueue -> removeByID(5, (void*) hashqueue);
+
+    assert(hashqueue -> table[5] == NULL);
+    assert(hashqueue -> occupied_index[5] == 0);
+}
+
+static void removeByIDHeadPointersAmended(void) {
+    // Enqueue 10 threads, ids [0..9]
+    for (int i = 0; i < 10; ++i) {
+        hashqueue -> enqueue((void*) threads[i], (void*) hashqueue);
+    }
+    
+    assert(hashqueue -> head == hashqueue -> table[0]);
+    hashqueue -> removeByID(0, (void*) hashqueue);
+    assert(hashqueue -> head == hashqueue -> table[1]);
+    assert(hashqueue -> table[2] -> prev == hashqueue -> head);
+}
+
+static void removeByIDTailPointersAmended(void) {
+    // Enqueue 10 threads, ids [0..9]
+    for (int i = 0; i < 10; ++i) {
+        hashqueue -> enqueue((void*) threads[i], (void*) hashqueue);
+    }
+    
+    assert(hashqueue -> tail == hashqueue -> table[9]);
+    hashqueue -> removeByID(9, (void*) hashqueue);
+    assert(hashqueue -> tail == hashqueue -> table[8]);
+    assert(hashqueue -> table[7] -> next == hashqueue -> tail);
+}
+
+/*
+    Before:
+    Slot    thread_id
+    0       0
+    1       128
+    2       256
+    3       3
+    4       1
+    5       129
+
+    If we remove id 128, we should expect:
+
+    -   thread id 256 (slot 2) should move to slot 1 (just vacated by id 128)
+    -   thread id 1 (slot 4) should move to slot 2 (just vacated by id 256)
+    -   thread id 129 (slot 5) should move to slot 4 (just vacated by id 1)
+    -   slot 5 should be empty
+
+*/
+static void removeByIDTableRepairTest1(void) {
+    for (int i = 0; i <= 5; ++i) {
+        hashqueue -> enqueue((void*) overlapping_threads[i],(void*) hashqueue);
+    }
+
+    hashqueue -> removeByID(128, (void*) hashqueue);
+
+    assert(hashqueue -> table[1] -> t -> id == 256);        // id 256 moved to slot 1
+    assert(hashqueue -> table[1] -> table_index == 1);
+    assert(hashqueue -> occupied_index[1] == 1);
+
+    assert(hashqueue -> table[2] -> t -> id == 1);          // id 129 moved to slot 4
+    assert(hashqueue -> table[2] -> table_index == 2);
+    assert(hashqueue -> occupied_index[2] == 1);
+
+    assert(hashqueue -> table[3] -> t -> id == 3);          // id 3 did not move
+    assert(hashqueue -> table[3] -> table_index == 3);
+    assert(hashqueue -> occupied_index[3] == 1);
+
+    assert(hashqueue -> table[4] -> t -> id == 129);        // id 128 moved to slot 0
+    assert(hashqueue -> table[4] -> table_index == 4);
+    assert(hashqueue -> occupied_index[4] == 1);
+
+    assert(hashqueue -> table[5] == NULL);                  // slot 5 is empty
+    assert(hashqueue -> occupied_index[5] == 0);
+
+}
+
+/*
+    Contains Tests
+*/
+
+static void containsTrue(void) {
+    hashqueue -> enqueue((void*) threads[3], (void*) hashqueue);
+    assert(hashqueue -> contains(3, (void*) hashqueue) == 1);
+}
+
+static void containsFalse(void) {
+    assert(hashqueue -> contains(3, (void*) hashqueue) == 0);
+}
+
+static void containsFalseAfterDequeue(void) {
+    hashqueue -> enqueue((void*) threads[3], (void*) hashqueue);
+    hashqueue -> dequeue((void*) hashqueue);
+    assert(hashqueue -> contains(3, (void*) hashqueue) == 0);
+}
+
+static void containsFalseAfterRemoveByID(void) {
+    hashqueue -> enqueue((void*) threads[3], (void*) hashqueue);
+    hashqueue -> removeByID(3, (void*) hashqueue);
+    assert(hashqueue -> contains(3, (void*) hashqueue) == 0);
+}
+
+static void noRehashBeforeThreshold(void) {
+    // do not surpass 50%
+    void* original_queue_address = (void*) hashqueue;
+
+    for (int i = 0; i < 63; ++i) {
+        hashqueue -> enqueue((void*) threads[i], (void*) hashqueue);
+    }
+
+    QueueResultPair final_enqueue = hashqueue -> enqueue((void*) threads[63], (void*) hashqueue);
+    assert(original_queue_address == final_enqueue.queue);
+}
+
+static void addressModifiedAfterRehash(void) {
+    void* original_queue_address = (void*) hashqueue;
+
+    for (int i = 0; i < 64; ++i) {
+        hashqueue -> enqueue((void*) threads[i], (void*) hashqueue);
+    }
+
+    QueueResultPair final_enqueue = hashqueue -> enqueue((void*) threads[64], (void*) hashqueue);
+    //assert(original_queue_address != final_enqueue.queue);
+}
+
 int main() {
     // Setup global test variables
     initialiseBasicThreads();
@@ -257,15 +458,13 @@ int main() {
     // Construction Test
     runTest(constructionTest);
 
-    // Enqueue first element tests
+    // Enqueue tests
     runTest(sizeModified);
     runTest(queuePointersUpdatedFirstInsertion);
     runTest(tableUpdatedFirstInsertion);
     runTest(addressUnmodified);
     runTest(enqueueSuccessfulReturnValue);
     runTest(linearProbing);
-
-    // Enqueue further elements tests
     runTest(queuePointersUpdatedSecondInsertion);
     runTest(insert3);
 
@@ -275,6 +474,29 @@ int main() {
     runTest(dequeueCorrectElement);
     runTest(dequeuePointersMended);
     runTest(dequeueTableMended);
-    runTest(dequeueTableRepairTest);
+    runTest(dequeueTableRepairTest1);
+
+    // removeByID tests
+    runTest(removeByIDCorrectElement);
+    runTest(removeByIDSizeChanged);
+    runTest(removeByIDLoadFactorChanged);
+    runTest(removeByIDNotFound);
+    runTest(removeByIDIntermediatePointersMended);
+    runTest(removeByIDIntermediateTableAmended);
+    runTest(removeByIDHeadPointersAmended);
+    runTest(removeByIDTailPointersAmended);
+    runTest(removeByIDTableRepairTest1);
+
+    // Contains tests
+    runTest(containsTrue);
+    runTest(containsFalse);
+    runTest(containsFalseAfterDequeue);
+    runTest(containsFalseAfterRemoveByID);
+
+    // Rehashing tests
+    runTest(noRehashBeforeThreshold);
+    //runTest(addressModifiedAfterRehash);
+
+    printf("All tests passsed.\n");
     return 0; 
 }
