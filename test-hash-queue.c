@@ -445,10 +445,9 @@ static void addressModifiedAfterRehash(void) {
         hashqueue -> enqueue(threads[i], hashqueue);
     }
 
-    printf("here1");
     QueueResultPair final_enqueue = hashqueue -> enqueue(threads[64], hashqueue);
-    
-    assert(original_queue_address != final_enqueue.queue);
+    hashqueue = final_enqueue.queue;
+    assert(original_queue_address != hashqueue);
 }
 
 int main(void) {
