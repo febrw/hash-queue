@@ -237,7 +237,6 @@ int HashQueue_init(HashQueue *this) {
     this -> size = 0;
     this -> capacity = INITIAL_CAPACITY;
     this -> load_factor = 0.0;
-    this -> rehash_threshold = REHASH_THRESHOLD;
     this -> head = NULL;
     this -> tail = NULL;
     this -> table = malloc(INITIAL_CAPACITY * sizeof(Entry*));
@@ -297,7 +296,6 @@ QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
     new_queue -> size = old_queue -> size;
     new_queue -> capacity = (old_queue -> capacity) * 2;
     new_queue -> load_factor = (double) new_queue -> size / new_queue -> capacity;
-    new_queue -> rehash_threshold = REHASH_THRESHOLD;
 
     new_queue -> head = old_queue -> head;
     new_queue -> tail = old_queue -> tail;

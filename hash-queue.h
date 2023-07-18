@@ -57,7 +57,6 @@ struct HashQueue {
     int size;
     int capacity;                                          // must be a power of 2
     double load_factor;                                    // [0,1]
-    double rehash_threshold;                               // rehash when surpassed
     Entry * head;
     Entry * tail;
     Entry ** table;                                        // malloc table, uses double pointers to allow rehashing to maintain next and prev pointers
