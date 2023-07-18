@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "hash-queue.h"
 
-static const int tests_count = 44;
+static const int tests_count = 45;
 static int tests_passed = 0;
 
 static HashQueue *hashqueue;
@@ -879,9 +879,7 @@ static void rehashTableFieldsUpdated(void) {
     double old_load_factor = hashqueue -> load_factor;
     double old_rehash_threshold = hashqueue -> rehash_threshold;
 
-
     // Add 1 more element, forcing rehashing
-    
     result = hashqueue -> enqueue(test_threads[64], hashqueue);
     hashqueue = result.queue;
 
@@ -897,7 +895,54 @@ static void rehashTableFieldsUpdated(void) {
     assert(new_rehash_threshold == old_rehash_threshold);
 
     ++tests_passed;
+}
 
+static void rehashFullChainMaintained(void) {
+    // IDs [64, 191]
+    thread* test_threads[128];
+    for (int i = 0; i < 128; ++i) {
+        test_threads[i] = malloc(sizeof(thread));
+        if (test_threads[i] == NULL) {
+            printf("mem alloc failed\n");
+            assert(1==0);
+        } else {
+            test_threads[i] -> id = i + 64;
+        }
+    }
+
+    QueueResultPair result;
+    // IDs [64, 127]
+    for (int i = 0; i < 64; ++i) {
+        result = hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue = result.queue;
+    }
+
+    u16 original_ids[64];
+    Entry *curr = hashqueue -> head;
+    
+    // store old ids by following next pointers
+    for (int i = 0; curr != NULL; ++i, curr = curr -> next) {
+        original_ids[i] = curr -> t -> id;
+    }
+
+    // Add 1 more element, forcing rehashing
+    result = hashqueue -> enqueue(test_threads[64], hashqueue);
+    hashqueue = result.queue;
+
+    // store ids in new table by following next pointers
+    u16 test_ids[65];
+    curr = hashqueue -> head;
+    for (int i = 0; curr != NULL; ++i, curr = curr -> next) {
+        test_ids[i] = curr -> t -> id;
+    }
+
+    // equal for first 64
+    for (int i = 0; i < 64; ++i) {
+        assert(original_ids[i] == test_ids[i]);
+    }
+    assert(test_ids[64] == 128);
+
+    ++tests_passed;
 }
 
 int main(void) {
@@ -955,6 +1000,7 @@ int main(void) {
     runTest(newTableQPointersCorrect);
     runTest(correctRehashLocations);
     runTest(rehashTableFieldsUpdated);
+    runTest(rehashFullChainMaintained);
 
     // isEmpty tests
     runTest(isEmptyFalse);
