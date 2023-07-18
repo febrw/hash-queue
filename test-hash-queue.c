@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "hash-queue.h"
 
-static const int tests_count = 48;
+static const int tests_count = 49;
 static int tests_passed = 0;
 
 static HashQueue *hashqueue;
@@ -683,74 +683,6 @@ static void newTableQPointersCorrect(void) {
     ++tests_passed;
 }
 
-/*
-    isEmpty tests
-*/
-
-static void isEmptyFalse(void) {
-    for (int i = 0; i < 4; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
-    }
-
-    assert(hashqueue -> isEmpty(hashqueue) == 0);
-    ++tests_passed;
-}
-
-static void isEmptyFollowingDequeues(void) {
-    for (int i = 0; i < 4; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
-    }
-
-    for (int i = 0; i < 4; ++i) {
-        hashqueue -> dequeue(hashqueue);
-    }
-
-    assert(hashqueue -> isEmpty(hashqueue) == 1);
-    ++tests_passed;
-}
-
-static void isEmptyFollowingRemoveByIDs(void) {
-    for (int i = 0; i < 4; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
-    }
-
-    for (int i = 0; i < 4; ++i) {
-        hashqueue -> removeByID(i, hashqueue);
-    }
-
-    assert(hashqueue -> isEmpty(hashqueue) == 1);
-    ++tests_passed;
-}
-
-static void isEmptyPointersAgreePositive(void) {
-    for (int i = 0; i < 4; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
-    }
-
-    assert(hashqueue -> isEmpty(hashqueue) == 
-        (hashqueue -> head == NULL && hashqueue -> tail == NULL));
-
-    ++tests_passed;
-}
-
-static void isEmptyPointersAgreeNegative(void) {
-    for (int i = 0; i < 4; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
-    }
-
-    assert(hashqueue -> isEmpty(hashqueue) == 
-        (hashqueue -> head == NULL && hashqueue -> tail == NULL));
-
-    for (int i = 0; i < 4; ++i) {
-        hashqueue -> removeByID(i, hashqueue);
-    }
-
-    assert(hashqueue -> isEmpty(hashqueue) == 
-        (hashqueue -> head == NULL && hashqueue -> tail == NULL));
-
-    ++tests_passed;
-}
-
 static void correctRehashLocations(void) {
     // IDs [64, 191]
     thread* test_threads[128];
@@ -891,6 +823,81 @@ static void rehashFullChainMaintained(void) {
 
     ++tests_passed;
 }
+
+/*
+    isEmpty tests
+*/
+static void isEmptyTrue(void) {
+    assert(hashqueue -> isEmpty(hashqueue) == 1);
+    ++tests_passed;
+}
+
+
+static void isEmptyFalse(void) {
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> enqueue(threads[i], hashqueue);
+    }
+
+    assert(hashqueue -> isEmpty(hashqueue) == 0);
+    ++tests_passed;
+}
+
+static void isEmptyFollowingDequeues(void) {
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> enqueue(threads[i], hashqueue);
+    }
+
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> dequeue(hashqueue);
+    }
+
+    assert(hashqueue -> isEmpty(hashqueue) == 1);
+    ++tests_passed;
+}
+
+static void isEmptyFollowingRemoveByIDs(void) {
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> enqueue(threads[i], hashqueue);
+    }
+
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> removeByID(i, hashqueue);
+    }
+
+    assert(hashqueue -> isEmpty(hashqueue) == 1);
+    ++tests_passed;
+}
+
+static void isEmptyPointersAgreePositive(void) {
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> enqueue(threads[i], hashqueue);
+    }
+
+    assert(hashqueue -> isEmpty(hashqueue) == 
+        (hashqueue -> head == NULL && hashqueue -> tail == NULL));
+
+    ++tests_passed;
+}
+
+static void isEmptyPointersAgreeNegative(void) {
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> enqueue(threads[i], hashqueue);
+    }
+
+    assert(hashqueue -> isEmpty(hashqueue) == 
+        (hashqueue -> head == NULL && hashqueue -> tail == NULL));
+
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> removeByID(i, hashqueue);
+    }
+
+    assert(hashqueue -> isEmpty(hashqueue) == 
+        (hashqueue -> head == NULL && hashqueue -> tail == NULL));
+
+    ++tests_passed;
+}
+
+
 
 static void ohNoBadBad1(void) {
     thread* test_threads[3];
@@ -1155,6 +1162,7 @@ int main(void) {
     runTest(rehashFullChainMaintained);
 
     // isEmpty tests
+    runTest(isEmptyTrue);
     runTest(isEmptyFalse);
     runTest(isEmptyFollowingDequeues);
     runTest(isEmptyFollowingRemoveByIDs);
