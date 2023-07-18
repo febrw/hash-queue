@@ -57,7 +57,7 @@ static QueueResultPair HashQueue_enqueue(thread *t, ThreadQueue *queue) {
         result.queue = (ThreadQueue*) hash_queue;
         result.result = 1;
     }
-    //printf("here\n");
+
     return result;
 }
 
@@ -127,7 +127,7 @@ static thread *HashQueue_dequeue(ThreadQueue *queue) {
 
     thread *thread = entry -> t;
     free(entry);
-    return (void*) thread;
+    return thread;
 
 }
 
@@ -165,7 +165,7 @@ static thread *HashQueue_removeByID(u16 thread_id, HashQueue *hashqueue) {
 
             HashQueue_tableRepair(inspect_index, hashqueue);
             free(curr);                                     // free Entry
-            return (void*) found;
+            return found;
         } else {
             inspect_index = (inspect_index + 1) & table_mask;
         }
