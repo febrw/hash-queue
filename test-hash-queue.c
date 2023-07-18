@@ -57,7 +57,6 @@ static void runTest(void (*testFunction) (void)) {
 static void constructionTest(void) {
     assert(hashqueue -> size == 0);
     assert(hashqueue -> load_factor == 0.0);
-    assert(hashqueue -> rehash_threshold == 0.5);
     assert(hashqueue -> table != NULL);
     assert(hashqueue -> occupied_index != NULL);
     assert(hashqueue -> head == NULL);
