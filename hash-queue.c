@@ -14,7 +14,7 @@ static QueueResultPair HashQueue_enqueue(thread *t, ThreadQueue *queue) {
     const u16 table_mask = (hash_queue -> capacity) - 1;
     u16 table_index = thread_id & table_mask;
 
-    while (hash_queue -> occupied_index[table_index] != 0) // iterate while positions unavailable
+    while (hash_queue -> table[table_index] != NULL) // iterate while positions unavailable
     {
         table_index = (table_index + 1) & table_mask;
     }
@@ -44,7 +44,6 @@ static QueueResultPair HashQueue_enqueue(thread *t, ThreadQueue *queue) {
     
 
     hash_queue -> table[table_index] = new_entry;
-    hash_queue -> occupied_index[table_index] = 1;
     ++ hash_queue -> size;
 
     hash_queue -> load_factor = (double) hash_queue -> size / hash_queue -> capacity;
@@ -82,7 +81,7 @@ static void HashQueue_tableRepair(u16 empty_index, HashQueue *hashqueue) {
     u16 thread_id;
     u16 ideal_index;                                                        // will store where an entry would ideally be placed
 
-    while (hashqueue -> occupied_index[inspect_index] != 0) {
+    while (hashqueue -> table[inspect_index] != NULL) {
         thread_id = hashqueue -> table[inspect_index] -> t -> id;
         ideal_index = thread_id & table_mask;
 
@@ -98,8 +97,6 @@ static void HashQueue_tableRepair(u16 empty_index, HashQueue *hashqueue) {
             hashqueue -> table[empty_index] = hashqueue -> table[inspect_index];    // store the out of place entry into the empty slot
             hashqueue -> table[empty_index] -> table_index = empty_index;           // reflect new position inside the Entry
             hashqueue -> table[inspect_index] = NULL;                               // empty the inspect index, as we have moved the entry
-            hashqueue -> occupied_index[empty_index] = 1;
-            hashqueue -> occupied_index[inspect_index] = 0;                         // record movement in occupation indexes
 
             empty_index = inspect_index;                                    
         } 
@@ -122,7 +119,6 @@ static thread *HashQueue_dequeue(ThreadQueue *queue) {
     const u16 table_index = entry -> table_index;   // attained directly without search
 
     // Update hashqueue fields
-    hashqueue -> occupied_index[table_index] = 0;
     hashqueue -> table[table_index] = NULL;
     -- hashqueue -> size;
     hashqueue -> load_factor = (double) hashqueue -> size / hashqueue -> capacity;
@@ -151,7 +147,7 @@ static thread *HashQueue_removeByID(u16 thread_id, HashQueue *hashqueue) {
     const u16 table_mask = (hashqueue -> capacity) - 1;
     u16 inspect_index = thread_id & table_mask;
 
-    while (hashqueue -> occupied_index[inspect_index] != 0)
+    while (hashqueue -> table[inspect_index] != NULL)
     {
         Entry *curr = hashqueue -> table[inspect_index];
 
@@ -172,7 +168,6 @@ static thread *HashQueue_removeByID(u16 thread_id, HashQueue *hashqueue) {
                 prev -> next = next;
             }
             // Table fields update
-            hashqueue -> occupied_index[inspect_index] = 0; // mark deleted
             hashqueue -> table[inspect_index] = NULL;       // remove entry from table
             -- hashqueue -> size;                           // record size change
             hashqueue -> load_factor = (double) hashqueue -> size / hashqueue -> capacity;
@@ -195,7 +190,7 @@ static int HashQueue_contains(u16 thread_id, ThreadQueue* queue) {
     const u16 table_mask = (hashqueue -> capacity) - 1;
     u16 table_index = thread_id & table_mask;
 
-    while (hashqueue -> occupied_index[table_index] != 0)
+    while (hashqueue -> table[table_index] != NULL)
     {
         Entry* curr = hashqueue -> table[table_index];
         if (curr -> t -> id == thread_id) {
@@ -220,12 +215,11 @@ static int HashQueue_isEmpty(ThreadQueue* queue) {
 static void HashQueue_free(HashQueue *this) {
     // Free each entry in the hash table
     for (int i = 0; i < this -> capacity; ++i) {
-        if (this -> occupied_index[i] != 0) {
+        if (this -> table[i] != NULL) {
             free(this -> table[i]);
         }
     }
     free(this -> table);
-    free(this -> occupied_index);
     free(this);
 }
 
@@ -243,12 +237,8 @@ int HashQueue_init(HashQueue *this) {
     if (this -> table == NULL) {
         return 0;
     }
-    this -> occupied_index = malloc((INITIAL_CAPACITY) * sizeof(u8));
-    if (this -> occupied_index == NULL) {
-        return 0;
-    }
+    
     for (int i = 0; i < INITIAL_CAPACITY; ++i) {
-        this -> occupied_index[i] = 0;  // all unoccupied to begin
         this -> table[i] = NULL;        // explicitly set Entry pointers to null   
     }
 
@@ -307,15 +297,8 @@ QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
         return result;
     }
 
-    new_queue -> occupied_index = malloc((new_queue -> capacity) * sizeof(u8));
-    if (new_queue -> occupied_index == NULL) {
-        QueueResultPair result = {(ThreadQueue*) old_queue, 0};
-        return result;
-    }
-
     // Set occupied indices to 0 to begin
     for (int i = 0; i < new_queue -> capacity; ++i) {
-        new_queue -> occupied_index[i] = 0;
         new_queue -> table[i] = NULL;
     }
 
@@ -330,17 +313,16 @@ QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
     const u16 table_mask = (new_queue -> capacity) - 1;
     u16 table_index;
     for (int i = 0; i < old_queue -> capacity; ++i) {
-        if (old_queue -> occupied_index[i] != 0) {
+        if (old_queue -> table[i] != NULL) {
             Entry * entry = old_queue -> table[i];
 
             table_index = (entry -> t -> id) & table_mask;
-            while (new_queue -> occupied_index[table_index] != 0) {
+            while (new_queue -> table[table_index] != NULL) {
                 table_index = (table_index + 1) & table_mask;
             }
             new_queue -> table[table_index] = entry;
-            new_queue -> occupied_index[table_index] = 1;
 
-            old_queue -> occupied_index[i] = 0; // set to zero so entries will not be freed
+            old_queue -> table[i] = NULL; // set to zero so entries will not be freed
         }
     }
     

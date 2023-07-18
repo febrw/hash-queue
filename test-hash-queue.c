@@ -58,7 +58,6 @@ static void constructionTest(void) {
     assert(hashqueue -> size == 0);
     assert(hashqueue -> load_factor == 0.0);
     assert(hashqueue -> table != NULL);
-    assert(hashqueue -> occupied_index != NULL);
     assert(hashqueue -> head == NULL);
     assert(hashqueue -> tail == NULL);
 
@@ -101,7 +100,6 @@ static void tableUpdatedFirstInsertion(void) {
     Entry *head = hashqueue -> head;
     u16 table_index = head -> table_index;
     assert(hashqueue -> table[table_index] == head);            // table contains the entry
-    assert(hashqueue -> occupied_index[table_index] == 1);      // occupied index reflects insertion
 
     ++tests_passed;
 }
@@ -237,11 +235,6 @@ static void dequeueTableMended(void) {
     hashqueue -> enqueue(threads[2], hashqueue);
     thread *dequeued = hashqueue -> dequeue(hashqueue);
 
-    // Occupied index ok
-    assert(hashqueue -> occupied_index[0] == 0);
-    assert(hashqueue -> occupied_index[1] == 1);
-    assert(hashqueue -> occupied_index[2] == 1);
-
     // Table OK
     assert(hashqueue -> table[0] == NULL);
     assert(hashqueue -> table[1] -> t -> id == 1);
@@ -283,26 +276,20 @@ static void dequeueTableRepairTest(void) {
 
     assert(hashqueue -> table[0] -> t -> id == 128);        // id 128 moved to slot 0
     assert(hashqueue -> table[0] -> table_index == 0);
-    assert(hashqueue -> occupied_index[0] == 1);
 
     assert(hashqueue -> table[1] -> t -> id == 256);        // id 256 moved to slot 1
     assert(hashqueue -> table[1] -> table_index == 1);
-    assert(hashqueue -> occupied_index[1] == 1);
 
     assert(hashqueue -> table[2] -> t -> id == 1);          // id 129 moved to slot 4
     assert(hashqueue -> table[2] -> table_index == 2);
-    assert(hashqueue -> occupied_index[2] == 1);
 
     assert(hashqueue -> table[3] -> t -> id == 3);          // id 3 did not move
     assert(hashqueue -> table[3] -> table_index == 3);
-    assert(hashqueue -> occupied_index[3] == 1);
 
     assert(hashqueue -> table[4] -> t -> id == 129);        // id 128 moved to slot 0
     assert(hashqueue -> table[4] -> table_index == 4);
-    assert(hashqueue -> occupied_index[4] == 1);
 
     assert(hashqueue -> table[5] == NULL);                  // slot 5 is empty
-    assert(hashqueue -> occupied_index[5] == 0);
 
     ++tests_passed;
 }
@@ -394,7 +381,6 @@ static void removeByIDIntermediateTableAmended(void) {
     hashqueue -> removeByID(5, hashqueue);
 
     assert(hashqueue -> table[5] == NULL);
-    assert(hashqueue -> occupied_index[5] == 0);
 
     ++tests_passed;
 }
@@ -420,11 +406,9 @@ static void removeByIDHeadTableAmended(void) {
     }
 
     assert(hashqueue -> table[0] -> t -> id == 0);
-    assert(hashqueue -> occupied_index[0] == 1);
     hashqueue -> removeByID(0, hashqueue);
 
     assert(hashqueue -> table[0] == NULL);
-    assert(hashqueue -> occupied_index[0] == 0);
 
     ++tests_passed;
 }
@@ -450,11 +434,9 @@ static void removeByIDTailTableAmended(void) {
     }
 
     assert(hashqueue -> table[9] -> t -> id == 9);
-    assert(hashqueue -> occupied_index[9] == 1);
     hashqueue -> removeByID(9, hashqueue);
 
     assert(hashqueue -> table[9] == NULL);
-    assert(hashqueue -> occupied_index[9] == 0);
 
     ++tests_passed;
 }
@@ -486,22 +468,17 @@ static void removeByIDTableRepairTest(void) {
 
     assert(hashqueue -> table[1] -> t -> id == 256);        // id 256 moved to slot 1
     assert(hashqueue -> table[1] -> table_index == 1);
-    assert(hashqueue -> occupied_index[1] == 1);
 
     assert(hashqueue -> table[2] -> t -> id == 1);          // id 129 moved to slot 4
     assert(hashqueue -> table[2] -> table_index == 2);
-    assert(hashqueue -> occupied_index[2] == 1);
 
     assert(hashqueue -> table[3] -> t -> id == 3);          // id 3 did not move
     assert(hashqueue -> table[3] -> table_index == 3);
-    assert(hashqueue -> occupied_index[3] == 1);
 
     assert(hashqueue -> table[4] -> t -> id == 129);        // id 128 moved to slot 0
     assert(hashqueue -> table[4] -> table_index == 4);
-    assert(hashqueue -> occupied_index[4] == 1);
 
     assert(hashqueue -> table[5] == NULL);                  // slot 5 is empty
-    assert(hashqueue -> occupied_index[5] == 0);
 
     ++tests_passed;
 }
@@ -556,21 +533,11 @@ static void removeByIDTableRepairWrapAround(void) {
     hashqueue -> enqueue(test_threads[5], hashqueue);
 
     assert(hashqueue -> table[0] -> t -> id == 0);
-    assert(hashqueue -> occupied_index[0] == 1);
-
     assert(hashqueue -> table[1] -> t -> id == 636);
-    assert(hashqueue -> occupied_index[1] == 1);
-
     assert(hashqueue -> table[124] -> t -> id == 124);
-    assert(hashqueue -> occupied_index[124] == 1);
-
     assert(hashqueue -> table[125] -> t -> id == 252);
-    assert(hashqueue -> occupied_index[125] == 1);
-
     assert(hashqueue -> table[126] -> t -> id == 380);
-    assert(hashqueue -> occupied_index[126] == 1);
     assert(hashqueue -> table[127] -> t -> id == 508);
-    assert(hashqueue -> occupied_index[127] == 1);
     
     hashqueue -> removeByID(380, hashqueue);
 
@@ -579,22 +546,11 @@ static void removeByIDTableRepairWrapAround(void) {
         636 moves into slot 127, (wrapped back around), vacated by 508
     */
     assert(hashqueue -> table[0] -> t -> id == 0);
-    assert(hashqueue -> occupied_index[0] == 1);
-
     assert(hashqueue -> table[1] == NULL);
-    assert(hashqueue -> occupied_index[1] == 0);
-
     assert(hashqueue -> table[124] -> t -> id == 124);
-    assert(hashqueue -> occupied_index[124] == 1);
-
     assert(hashqueue -> table[125] -> t -> id == 252);
-    assert(hashqueue -> occupied_index[125] == 1);
-
     assert(hashqueue -> table[126] -> t -> id == 508);
-    assert(hashqueue -> occupied_index[126] == 1);
-
     assert(hashqueue -> table[127] -> t -> id == 636);
-    assert(hashqueue -> occupied_index[127] == 1);
 
     ++tests_passed;
 }
@@ -817,13 +773,11 @@ static void correctRehashLocations(void) {
     // first 64 slots empty
     for (int i = 0; i < 64; ++i) {
         assert(hashqueue -> table[i] == NULL);
-        assert(hashqueue -> occupied_index[i] == 0);
     }
 
     // latter 64 filled
     for (int i = 64; i < 128; ++i) {
         assert(hashqueue -> table[i] -> t -> id == i);
-        assert(hashqueue -> occupied_index[i] == 1);
     }
 
     // Add further 64 elements, forcing rehashing on first enqueue
@@ -836,19 +790,16 @@ static void correctRehashLocations(void) {
     // first 64 should be empty
     for (int i = 0; i < 64; ++i) {
         assert(hashqueue -> table[i] == NULL);
-        assert(hashqueue -> occupied_index[i] == 0);
     }
 
     // middle 128 should be full
     for (int i = 64; i < 192; ++i) {
         assert(hashqueue -> table[i] -> t -> id == i);
-        assert(hashqueue -> occupied_index[i] == 1);
     }
 
     // final 64 should be empty
     for (int i = 192; i < 256; ++i) {
         assert(hashqueue -> table[i] == NULL);
-        assert(hashqueue -> occupied_index[i] == 0);
     }
 
     ++tests_passed;

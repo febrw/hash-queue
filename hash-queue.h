@@ -60,7 +60,6 @@ struct HashQueue {
     Entry * head;
     Entry * tail;
     Entry ** table;                                        // malloc table, uses double pointers to allow rehashing to maintain next and prev pointers
-    u8 * occupied_index;                                   // char array indicating slot occupations
     void (*freeQueue) (HashQueue*);
     thread* (*removeByID) (u16, HashQueue*);               // Inputs: ID, queue. Output: removed element
 };
