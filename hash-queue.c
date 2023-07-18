@@ -194,7 +194,7 @@ static int HashQueue_contains(u16 thread_id, ThreadQueue* queue) {
 
 static int HashQueue_isEmpty(ThreadQueue* queue) {
     HashQueue * hashqueue = (HashQueue*) queue;
-    return (hashqueue -> head == NULL) && (hashqueue -> tail == NULL); // size == 0?
+    return (hashqueue -> size == 0);
 }
 
 //----------------------------------- CONSTRUCTORS + DESTRUCTOR -----------------------------------

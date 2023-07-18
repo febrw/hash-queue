@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "hash-queue.h"
 
-static const int tests_count = 34;
+static const int tests_count = 42;
 static int tests_passed = 0;
 
 static HashQueue *hashqueue;
@@ -308,6 +308,18 @@ static void dequeueTableRepairTest(void) {
     ++tests_passed;
 }
 
+static void dequeueLoneElementQPointersAmended(void) {
+    hashqueue -> enqueue(threads[0], hashqueue);
+    assert(hashqueue -> head == hashqueue -> tail);
+
+    hashqueue -> dequeue(hashqueue);
+
+    assert(hashqueue -> head == NULL);
+    assert(hashqueue -> tail == NULL);
+
+    ++tests_passed;
+}
+
 /*
     RemoveByID tests
 */
@@ -558,6 +570,17 @@ static void removeByIDTableRepairWrapAround(void) {
     ++tests_passed;
 }
 
+
+static void removeByIDLoneElement(void) {
+    hashqueue -> enqueue(threads[0], hashqueue);
+
+    hashqueue -> removeByID(0, hashqueue);
+    assert(hashqueue -> head == NULL);
+    assert(hashqueue -> tail == NULL);
+
+    ++tests_passed;
+}
+
 /*
     Contains Tests
 */
@@ -656,6 +679,93 @@ static void addressModifiedAfterRehash(void) {
     ++tests_passed;
 }
 
+static void newTableQPointersCorrect(void) {
+    ThreadQueue* original_queue_address = (ThreadQueue*) hashqueue;
+
+    for (int i = 0; i < 64; ++i) {
+        hashqueue -> enqueue(threads[i], hashqueue);
+    }
+    Entry *original_head = hashqueue -> head;
+    Entry *next_up = hashqueue -> head -> next;
+    Entry *original_tail = hashqueue -> tail; 
+
+    QueueResultPair final_enqueue = hashqueue -> enqueue(threads[64], hashqueue);
+    hashqueue = final_enqueue.queue;
+    assert(original_head == hashqueue -> head);
+    assert(next_up == hashqueue -> head -> next);
+    assert(original_tail == hashqueue -> tail -> prev);
+
+    ++tests_passed;
+}
+
+/*
+    isEmpty tests
+*/
+
+static void isEmptyFalse(void) {
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> enqueue(threads[i], hashqueue);
+    }
+
+    assert(hashqueue -> isEmpty(hashqueue) == 0);
+    ++tests_passed;
+}
+
+static void isEmptyFollowingDequeues(void) {
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> enqueue(threads[i], hashqueue);
+    }
+
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> dequeue(hashqueue);
+    }
+
+    assert(hashqueue -> isEmpty(hashqueue) == 1);
+    ++tests_passed;
+}
+
+static void isEmptyFollowingRemoveByIDs(void) {
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> enqueue(threads[i], hashqueue);
+    }
+
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> removeByID(i, hashqueue);
+    }
+
+    assert(hashqueue -> isEmpty(hashqueue) == 1);
+    ++tests_passed;
+}
+
+static void isEmptyPointersAgreePositive(void) {
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> enqueue(threads[i], hashqueue);
+    }
+
+    assert(hashqueue -> isEmpty(hashqueue) == 
+        (hashqueue -> head == NULL && hashqueue -> tail == NULL));
+
+    ++tests_passed;
+}
+
+static void isEmptyPointersAgreeNegative(void) {
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> enqueue(threads[i], hashqueue);
+    }
+
+    assert(hashqueue -> isEmpty(hashqueue) == 
+        (hashqueue -> head == NULL && hashqueue -> tail == NULL));
+
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> removeByID(i, hashqueue);
+    }
+
+    assert(hashqueue -> isEmpty(hashqueue) == 
+        (hashqueue -> head == NULL && hashqueue -> tail == NULL));
+
+    ++tests_passed;
+}
+
 int main(void) {
     // Setup global test variables
     initialiseBasicThreads();
@@ -681,6 +791,7 @@ int main(void) {
     runTest(dequeuePointersMended);
     runTest(dequeueTableMended);
     runTest(dequeueTableRepairTest);
+    runTest(dequeueLoneElementQPointersAmended);
 
     // removeByID tests
     runTest(removeByIDCorrectElement);
@@ -695,6 +806,7 @@ int main(void) {
     runTest(removeByIDTailTableAmended);
     runTest(removeByIDTableRepairTest);
     runTest(removeByIDTableRepairWrapAround);
+    runTest(removeByIDLoneElement);
 
     // Contains tests
     runTest(containsTrue);
@@ -706,6 +818,14 @@ int main(void) {
     // Rehashing tests
     runTest(noRehashBeforeThreshold);
     runTest(addressModifiedAfterRehash);
+    runTest(newTableQPointersCorrect);
+
+    // isEmpty tests
+    runTest(isEmptyFalse);
+    runTest(isEmptyFollowingDequeues);
+    runTest(isEmptyFollowingRemoveByIDs);
+    runTest(isEmptyPointersAgreePositive);
+    runTest(isEmptyPointersAgreeNegative);
 
     printf("Passed %u/%u tests.\n", tests_passed, tests_count);
     return 0; 
