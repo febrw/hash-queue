@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-//------------------------------ LINKED HASHMAP ADT IMPLEMENTATIONS ------------------------------
+//------------------------------ HashQueue ADT IMPLEMENTATIONS ------------------------------
 
 /*
     Returns -1 if enqueue failed, 1 if succeeded, 2 if succeeded but rehashing required.
