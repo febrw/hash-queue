@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "hash-queue.h"
 
-static const int tests_count = 45;
+static const int tests_count = 48;
 static int tests_passed = 0;
 
 static HashQueue *hashqueue;
@@ -1216,14 +1216,14 @@ int main(void) {
 
 
     // BAD FIX
-    runTest(ohNoBadBad1);
-    runTest(ohNoBadBad2);
-    runTest(ohNoBadBad3);
+    //runTest(ohNoBadBad1);
+    //runTest(ohNoBadBad2);
+    //runTest(ohNoBadBad3);
     
-    // Once fixed
-    //runTest(tableRepairNoMoveTest1);
-    //runTest(tableRepairNoMoveTest2);
-    //runTest(tableRepairNoMoveTest3);
+    // Table repair tests
+    runTest(tableRepairNoMoveTest1);
+    runTest(tableRepairNoMoveTest2);
+    runTest(tableRepairNoMoveTest3);
 
     printf("Passed %u/%u tests.\n", tests_passed, tests_count);
     return 0; 

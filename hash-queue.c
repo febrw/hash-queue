@@ -86,7 +86,15 @@ static void HashQueue_tableRepair(u16 empty_index, HashQueue *hashqueue) {
         thread_id = hashqueue -> table[inspect_index] -> t -> id;
         ideal_index = thread_id & table_mask;
 
-        if (ideal_index != inspect_index) {                                         // current entry is 'out of place'
+        /* 
+            current entry is 'out of place'
+            or should not be moved backwards
+        */
+        if (!(ideal_index == inspect_index ||
+            (empty_index < ideal_index && ideal_index < inspect_index) ||
+            (ideal_index < inspect_index && inspect_index < empty_index) ||
+            (inspect_index < empty_index && empty_index < ideal_index)))
+        {                                         
             hashqueue -> table[empty_index] = hashqueue -> table[inspect_index];    // store the out of place entry into the empty slot
             hashqueue -> table[empty_index] -> table_index = empty_index;           // reflect new position inside the Entry
             hashqueue -> table[inspect_index] = NULL;                               // empty the inspect index, as we have moved the entry
