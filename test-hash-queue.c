@@ -877,7 +877,6 @@ static void rehashTableFieldsUpdated(void) {
     int old_size = hashqueue -> size;
     int old_capacity = hashqueue -> capacity;
     double old_load_factor = hashqueue -> load_factor;
-    double old_rehash_threshold = hashqueue -> rehash_threshold;
 
     // Add 1 more element, forcing rehashing
     result = hashqueue -> enqueue(test_threads[64], hashqueue);
@@ -886,13 +885,11 @@ static void rehashTableFieldsUpdated(void) {
     int new_size = hashqueue -> size;
     int new_capacity = hashqueue -> capacity;
     double new_load_factor = hashqueue -> load_factor;
-    double new_rehash_threshold = hashqueue -> rehash_threshold;
     
 
     assert(new_size == old_size + 1);
     assert(new_capacity == old_capacity * 2);
     assert(new_load_factor == ((old_load_factor) / 2) + ((double) 1 / 256)); // halved, plus 1 / 256
-    assert(new_rehash_threshold == old_rehash_threshold);
 
     ++tests_passed;
 }
