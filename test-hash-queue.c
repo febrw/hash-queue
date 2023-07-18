@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "hash-queue.h"
 
-static const int tests_count = 42;
+static const int tests_count = 44;
 static int tests_passed = 0;
 
 static HashQueue *hashqueue;
@@ -508,7 +508,6 @@ static void removeByIDTableRepairTest(void) {
 }
 
 /*
-
     Enqueueing 124, 252, 380, 508, 0, 636 should give:
 
         Table slot  | Thread ID
@@ -520,6 +519,16 @@ static void removeByIDTableRepairTest(void) {
             127         380
             128         508
 
+    - removeByID(380) should force wraparound to give
+
+    Table slot  | Thread ID
+            0           0
+            1           -
+
+            125         124
+            126         252
+            127         508
+            128         636
 
 */
 
@@ -548,11 +557,21 @@ static void removeByIDTableRepairWrapAround(void) {
     hashqueue -> enqueue(test_threads[5], hashqueue);
 
     assert(hashqueue -> table[0] -> t -> id == 0);
+    assert(hashqueue -> occupied_index[0] == 1);
+
     assert(hashqueue -> table[1] -> t -> id == 636);
+    assert(hashqueue -> occupied_index[1] == 1);
+
     assert(hashqueue -> table[124] -> t -> id == 124);
+    assert(hashqueue -> occupied_index[124] == 1);
+
     assert(hashqueue -> table[125] -> t -> id == 252);
+    assert(hashqueue -> occupied_index[125] == 1);
+
     assert(hashqueue -> table[126] -> t -> id == 380);
+    assert(hashqueue -> occupied_index[126] == 1);
     assert(hashqueue -> table[127] -> t -> id == 508);
+    assert(hashqueue -> occupied_index[127] == 1);
     
     hashqueue -> removeByID(380, hashqueue);
 
@@ -561,11 +580,22 @@ static void removeByIDTableRepairWrapAround(void) {
         636 moves into slot 127, (wrapped back around), vacated by 508
     */
     assert(hashqueue -> table[0] -> t -> id == 0);
+    assert(hashqueue -> occupied_index[0] == 1);
+
     assert(hashqueue -> table[1] == NULL);
+    assert(hashqueue -> occupied_index[1] == 0);
+
     assert(hashqueue -> table[124] -> t -> id == 124);
+    assert(hashqueue -> occupied_index[124] == 1);
+
     assert(hashqueue -> table[125] -> t -> id == 252);
+    assert(hashqueue -> occupied_index[125] == 1);
+
     assert(hashqueue -> table[126] -> t -> id == 508);
+    assert(hashqueue -> occupied_index[126] == 1);
+
     assert(hashqueue -> table[127] -> t -> id == 636);
+    assert(hashqueue -> occupied_index[127] == 1);
 
     ++tests_passed;
 }
@@ -766,6 +796,110 @@ static void isEmptyPointersAgreeNegative(void) {
     ++tests_passed;
 }
 
+static void correctRehashLocations(void) {
+    // IDs [64, 191]
+    thread* test_threads[128];
+    for (int i = 0; i < 128; ++i) {
+        test_threads[i] = malloc(sizeof(thread));
+        if (test_threads[i] == NULL) {
+            printf("mem alloc failed\n");
+            assert(1==0);
+        } else {
+            test_threads[i] -> id = i + 64;
+        }
+    }
+
+    QueueResultPair result;
+    for (int i = 0; i < 64; ++i) {
+        result = hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue = result.queue;
+    }
+
+    // first 64 slots empty
+    for (int i = 0; i < 64; ++i) {
+        assert(hashqueue -> table[i] == NULL);
+        assert(hashqueue -> occupied_index[i] == 0);
+    }
+
+    // latter 64 filled
+    for (int i = 64; i < 128; ++i) {
+        assert(hashqueue -> table[i] -> t -> id == i);
+        assert(hashqueue -> occupied_index[i] == 1);
+    }
+
+    // Add further 64 elements, forcing rehashing on first enqueue
+    for (int i = 64; i < 128; ++i) {
+        result = hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue = result.queue;
+    }
+
+    // New table
+    // first 64 should be empty
+    for (int i = 0; i < 64; ++i) {
+        assert(hashqueue -> table[i] == NULL);
+        assert(hashqueue -> occupied_index[i] == 0);
+    }
+
+    // middle 128 should be full
+    for (int i = 64; i < 192; ++i) {
+        assert(hashqueue -> table[i] -> t -> id == i);
+        assert(hashqueue -> occupied_index[i] == 1);
+    }
+
+    // final 64 should be empty
+    for (int i = 192; i < 256; ++i) {
+        assert(hashqueue -> table[i] == NULL);
+        assert(hashqueue -> occupied_index[i] == 0);
+    }
+
+    ++tests_passed;
+}
+
+static void rehashTableFieldsUpdated(void) {
+    // IDs [64, 191]
+    thread* test_threads[128];
+    for (int i = 0; i < 128; ++i) {
+        test_threads[i] = malloc(sizeof(thread));
+        if (test_threads[i] == NULL) {
+            printf("mem alloc failed\n");
+            assert(1==0);
+        } else {
+            test_threads[i] -> id = i + 64;
+        }
+    }
+
+    QueueResultPair result;
+    for (int i = 0; i < 64; ++i) {
+        result = hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue = result.queue;
+    }
+
+    int old_size = hashqueue -> size;
+    int old_capacity = hashqueue -> capacity;
+    double old_load_factor = hashqueue -> load_factor;
+    double old_rehash_threshold = hashqueue -> rehash_threshold;
+
+
+    // Add 1 more element, forcing rehashing
+    
+    result = hashqueue -> enqueue(test_threads[64], hashqueue);
+    hashqueue = result.queue;
+
+    int new_size = hashqueue -> size;
+    int new_capacity = hashqueue -> capacity;
+    double new_load_factor = hashqueue -> load_factor;
+    double new_rehash_threshold = hashqueue -> rehash_threshold;
+    
+
+    assert(new_size == old_size + 1);
+    assert(new_capacity == old_capacity * 2);
+    assert(new_load_factor == ((old_load_factor) / 2) + ((double) 1 / 256)); // halved, plus 1 / 256
+    assert(new_rehash_threshold == old_rehash_threshold);
+
+    ++tests_passed;
+
+}
+
 int main(void) {
     // Setup global test variables
     initialiseBasicThreads();
@@ -819,6 +953,8 @@ int main(void) {
     runTest(noRehashBeforeThreshold);
     runTest(addressModifiedAfterRehash);
     runTest(newTableQPointersCorrect);
+    runTest(correctRehashLocations);
+    runTest(rehashTableFieldsUpdated);
 
     // isEmpty tests
     runTest(isEmptyFalse);
