@@ -68,6 +68,8 @@ static void constructionTest(void) {
 */
 static void sizeModified(void) {
     QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
+    hashqueue = result.queue;
+
     assert(hashqueue -> size == 1);                 // size is 1
     assert(hashqueue -> isEmpty(hashqueue) == 0);   // queue not empty
     assert(hashqueue -> load_factor != 0);          // load factor has changed
@@ -76,6 +78,8 @@ static void sizeModified(void) {
 
 static void queuePointersUpdatedFirstInsertion(void) {
     QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
+    hashqueue = result.queue;
+
     Entry *head = hashqueue -> head;
     Entry *tail = hashqueue -> tail;
     assert(head == tail);           // head and tail are same for first insertion
@@ -85,6 +89,8 @@ static void queuePointersUpdatedFirstInsertion(void) {
 
 static void tableUpdatedFirstInsertion(void) {
     QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
+    hashqueue = result.queue;
+    
     Entry *head = hashqueue -> head;
     u16 table_index = head -> table_index;
     assert(hashqueue -> table[table_index] == head);            // table contains the entry
@@ -94,27 +100,38 @@ static void tableUpdatedFirstInsertion(void) {
 static void addressUnmodified(void) {
     HashQueue *original_address = hashqueue;
     QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
-    assert(result.queue == (original_address));
+    hashqueue = result.queue;
+    assert(hashqueue == original_address);
 }
 
 static void enqueueSuccessfulReturnValue(void) {
     QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
+    hashqueue = result.queue;
     assert(result.result == 1);
 }
 
 static void queuePointersUpdatedSecondInsertion(void) {
-    hashqueue -> enqueue(threads[0], (void*) hashqueue);
-    hashqueue -> enqueue(threads[1], (void*) hashqueue);
+    QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
+    hashqueue = result.queue;
+
+    result = hashqueue -> enqueue(threads[1], hashqueue);
+    hashqueue = result.queue;
+    
     assert(hashqueue -> head != hashqueue -> tail);             // tail has been updated
     assert(hashqueue -> head -> next == hashqueue -> tail);     // the head's next pointer points to the tail
     assert(hashqueue -> tail -> prev == hashqueue -> head);     // the tail's prev pointer points to the head
 }
 
 static void insert3(void) {
-    hashqueue -> enqueue(threads[0], hashqueue);
-    hashqueue -> enqueue(threads[1], hashqueue);
-    hashqueue -> enqueue(threads[2], hashqueue);
-    
+    QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
+    hashqueue = result.queue;
+
+    result = hashqueue -> enqueue(threads[1], hashqueue);
+    hashqueue = result.queue;
+
+    result = hashqueue -> enqueue(threads[2], hashqueue);
+    hashqueue = result.queue;
+
     assert(hashqueue -> size == 3);
     assert(hashqueue -> load_factor == (double) 3 / 128);
 

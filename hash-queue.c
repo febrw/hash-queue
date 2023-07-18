@@ -72,8 +72,8 @@ static QueueResultPair HashQueue_enqueue(thread *t, ThreadQueue *queue) {
 static void HashQueue_tableRepair(u16 empty_index, HashQueue *hashqueue) {
     const u16 table_mask = (hashqueue -> capacity) - 1;
     u16 inspect_index = (empty_index + 1) & table_mask;                     // we inspect the following index
-    u16 ideal_index;                                                        // will store where an entry would ideally be placed
     u16 thread_id;
+    u16 ideal_index;                                                        // will store where an entry would ideally be placed
 
     while (hashqueue -> occupied_index[inspect_index] != 0) {
         thread_id = hashqueue -> table[inspect_index] -> t -> id;
@@ -104,7 +104,7 @@ static thread *HashQueue_dequeue(ThreadQueue *queue) {
     }
 
     Entry *entry = hashqueue -> head;
-    const u16 table_index = entry -> table_index;
+    const u16 table_index = entry -> table_index;   // attained directly without search
 
     // Update hashqueue fields
     hashqueue -> occupied_index[table_index] = 0;
