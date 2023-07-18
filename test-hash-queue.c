@@ -945,6 +945,211 @@ static void rehashFullChainMaintained(void) {
     ++tests_passed;
 }
 
+static void ohNoBadBad1(void) {
+    thread* test_threads[3];
+
+    for (int i = 0; i < 3; ++i) {
+        test_threads[i] = malloc(sizeof(thread));
+        if (test_threads[i] == NULL) {
+            printf("mem alloc failed\n");
+            assert(1==0);
+        }
+    }
+
+    test_threads[0] -> id = 0;
+    test_threads[1] -> id = 1;
+    test_threads[2] -> id = 129;
+
+    for (int i = 0; i < 3; ++i) {
+        hashqueue -> enqueue(test_threads[i], hashqueue);
+    }
+
+    // Before removeByID(0)
+    assert(hashqueue -> table[0] -> t -> id == 0);
+    assert(hashqueue -> table[1] -> t -> id == 1);
+    assert(hashqueue -> table[2] -> t -> id == 129);
+
+    hashqueue -> removeByID(0, hashqueue);
+
+    // After removeByID(126)
+    assert(hashqueue -> table[0] -> t -> id == 129);
+    assert(hashqueue -> table[1] -> t -> id == 1);
+    assert(hashqueue -> table[2] == NULL);
+    printf("bad test1 ran.\n");
+}
+
+static void tableRepairNoMoveTest1(void) {
+    thread* test_threads[3];
+
+    for (int i = 0; i < 3; ++i) {
+        test_threads[i] = malloc(sizeof(thread));
+        if (test_threads[i] == NULL) {
+            printf("mem alloc failed\n");
+            assert(1==0);
+        }
+    }
+
+    test_threads[0] -> id = 0;
+    test_threads[1] -> id = 1;
+    test_threads[2] -> id = 129;
+
+    for (int i = 0; i < 3; ++i) {
+        hashqueue -> enqueue(test_threads[i], hashqueue);
+    }
+
+    // Before removeByID(0)
+    assert(hashqueue -> table[0] -> t -> id == 0);
+    assert(hashqueue -> table[1] -> t -> id == 1);
+    assert(hashqueue -> table[2] -> t -> id == 129);
+
+    hashqueue -> removeByID(0, hashqueue);
+
+    // After removeByID(126)
+    assert(hashqueue -> table[0] == NULL);
+    assert(hashqueue -> table[1] -> t -> id == 1);
+    assert(hashqueue -> table[2] -> t -> id ==  129);
+    
+    ++tests_passed;
+}
+
+static void ohNoBadBad2(void) {
+    thread* test_threads[3];
+
+    for (int i = 0; i < 3; ++i) {
+        test_threads[i] = malloc(sizeof(thread));
+        if (test_threads[i] == NULL) {
+            printf("mem alloc failed\n");
+            assert(1==0);
+        }
+    }
+
+    test_threads[0] -> id = 0;
+    test_threads[1] -> id = 127;
+    test_threads[2] -> id = 128;
+
+    for (int i = 0; i < 3; ++i) {
+        hashqueue -> enqueue(test_threads[i], hashqueue);
+    }
+
+    // Before removeByID(0)
+    assert(hashqueue -> table[0] -> t -> id == 0);
+    assert(hashqueue -> table[1] -> t -> id == 128);
+    assert(hashqueue -> table[127] -> t -> id == 127);
+
+    hashqueue -> removeByID(127, hashqueue);
+
+    // After removeByID(0)
+    assert(hashqueue -> table[0] -> t -> id == 0);
+    assert(hashqueue -> table[1] == NULL);
+    assert(hashqueue -> table[127] -> t -> id == 128);
+    printf("bad test2 ran.\n");
+}
+
+static void tableRepairNoMoveTest2(void) {
+    thread* test_threads[3];
+
+    for (int i = 0; i < 3; ++i) {
+        test_threads[i] = malloc(sizeof(thread));
+        if (test_threads[i] == NULL) {
+            printf("mem alloc failed\n");
+            assert(1==0);
+        }
+    }
+
+    test_threads[0] -> id = 0;
+    test_threads[1] -> id = 127;
+    test_threads[2] -> id = 128;
+
+    for (int i = 0; i < 3; ++i) {
+        hashqueue -> enqueue(test_threads[i], hashqueue);
+    }
+
+    // Before removeByID(0)
+    assert(hashqueue -> table[0] -> t -> id == 0);
+    assert(hashqueue -> table[1] -> t -> id == 128);
+    assert(hashqueue -> table[127] -> t -> id == 127);
+
+    hashqueue -> removeByID(127, hashqueue);
+
+    // After removeByID(0)
+    assert(hashqueue -> table[0] -> t -> id == 0);
+    assert(hashqueue -> table[1] -> t -> id == 128);
+    assert(hashqueue -> table[127] == NULL);
+
+    ++tests_passed;
+}
+
+
+
+static void ohNoBadBad3(void) {
+    thread* test_threads[3];
+
+    for (int i = 0; i < 3; ++i) {
+        test_threads[i] = malloc(sizeof(thread));
+        if (test_threads[i] == NULL) {
+            printf("mem alloc failed\n");
+            assert(1==0);
+        }
+    }
+
+    test_threads[0] -> id = 126;
+    test_threads[1] -> id = 127;
+    test_threads[2] -> id = 255;
+
+    for (int i = 0; i < 3; ++i) {
+        hashqueue -> enqueue(test_threads[i], hashqueue);
+    }
+
+    // Before removeByID(126)
+    assert(hashqueue -> table[0] -> t -> id == 255);
+    assert(hashqueue -> table[126] -> t -> id == 126);
+    assert(hashqueue -> table[127] -> t -> id == 127);
+
+    hashqueue -> removeByID(126, hashqueue);
+
+    // After removeByID(126)
+    assert(hashqueue -> table[0] == NULL);
+    assert(hashqueue -> table[126] -> t -> id == 255);
+    assert(hashqueue -> table[127] -> t -> id == 127);
+
+    printf("bad test3 ran.\n");
+
+}
+
+static void tableRepairNoMoveTest3(void) {
+    thread* test_threads[3];
+
+    for (int i = 0; i < 3; ++i) {
+        test_threads[i] = malloc(sizeof(thread));
+        if (test_threads[i] == NULL) {
+            printf("mem alloc failed\n");
+            assert(1==0);
+        }
+    }
+
+    test_threads[0] -> id = 126;
+    test_threads[1] -> id = 127;
+    test_threads[2] -> id = 255;
+
+    for (int i = 0; i < 3; ++i) {
+        hashqueue -> enqueue(test_threads[i], hashqueue);
+    }
+
+    // Before removeByID(126)
+    assert(hashqueue -> table[0] -> t -> id == 255);
+    assert(hashqueue -> table[126] -> t -> id == 126);
+    assert(hashqueue -> table[127] -> t -> id == 127);
+
+    hashqueue -> removeByID(126, hashqueue);
+
+    // After removeByID(126)
+    assert(hashqueue -> table[0] -> t -> id == 255);
+    assert(hashqueue -> table[126] == NULL);
+    assert(hashqueue -> table[127] -> t -> id == 127);
+
+    ++tests_passed;
+}
+
 int main(void) {
     // Setup global test variables
     initialiseBasicThreads();
@@ -1008,6 +1213,17 @@ int main(void) {
     runTest(isEmptyFollowingRemoveByIDs);
     runTest(isEmptyPointersAgreePositive);
     runTest(isEmptyPointersAgreeNegative);
+
+
+    // BAD FIX
+    runTest(ohNoBadBad1);
+    runTest(ohNoBadBad2);
+    runTest(ohNoBadBad3);
+    
+    // Once fixed
+    //runTest(tableRepairNoMoveTest1);
+    //runTest(tableRepairNoMoveTest2);
+    //runTest(tableRepairNoMoveTest3);
 
     printf("Passed %u/%u tests.\n", tests_passed, tests_count);
     return 0; 

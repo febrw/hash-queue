@@ -67,6 +67,13 @@ static QueueResultPair HashQueue_enqueue(thread *t, ThreadQueue *queue) {
         - Check each entry's ideal index.
         - If it is less than the index we emptied, move this entry into the empty index
         - continue until we find an empty slot
+
+    BAD BAD:
+        - fix if condition:
+        - we want to skip over:
+            - 1: entries in place, i.e. their ideal index is at the current inspect index
+            - 2: entries who's ideal index is lower than the empty index
+
 */
 
 static void HashQueue_tableRepair(u16 empty_index, HashQueue *hashqueue) {
