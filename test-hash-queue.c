@@ -69,11 +69,11 @@ static void constructionTest(void) {
     Enqueue tests
 */
 static void sizeModified(void) {
-    QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
-    hashqueue = result.queue;
+    QueueResultPair result = hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) result.queue;
 
     assert(hashqueue -> size == 1);                 // size is 1
-    assert(hashqueue -> isEmpty(hashqueue) == 0);   // queue not empty
+    assert(hashqueue -> isEmpty((ThreadQueue*) hashqueue) == 0);   // queue not empty
     assert(hashqueue -> load_factor != 0);          // load factor has changed
     assert(hashqueue -> load_factor == (double) 1 / hashqueue -> capacity);
 
@@ -81,8 +81,8 @@ static void sizeModified(void) {
 }
 
 static void queuePointersUpdatedFirstInsertion(void) {
-    QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
-    hashqueue = result.queue;
+    QueueResultPair result = hashqueue -> enqueue(threads[0],(ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) result.queue;
 
     Entry *head = hashqueue -> head;
     Entry *tail = hashqueue -> tail;
@@ -94,8 +94,8 @@ static void queuePointersUpdatedFirstInsertion(void) {
 }
 
 static void tableUpdatedFirstInsertion(void) {
-    QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
-    hashqueue = result.queue;
+    QueueResultPair result = hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) result.queue;
     
     Entry *head = hashqueue -> head;
     u16 table_index = head -> table_index;
@@ -106,27 +106,27 @@ static void tableUpdatedFirstInsertion(void) {
 
 static void addressUnmodified(void) {
     HashQueue *original_address = hashqueue;
-    QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
-    hashqueue = result.queue;
+    QueueResultPair result = hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) result.queue;
     assert(hashqueue == original_address);
 
     ++tests_passed;
 }
 
 static void enqueueSuccessfulReturnValue(void) {
-    QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
-    hashqueue = result.queue;
+    QueueResultPair result = hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) result.queue;
     assert(result.result == 1);
 
     ++tests_passed;
 }
 
 static void queuePointersUpdatedSecondInsertion(void) {
-    QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
-    hashqueue = result.queue;
+    QueueResultPair result = hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) result.queue;
 
-    result = hashqueue -> enqueue(threads[1], hashqueue);
-    hashqueue = result.queue;
+    result = hashqueue -> enqueue(threads[1], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) result.queue;
     
     assert(hashqueue -> head != hashqueue -> tail);             // tail has been updated
     assert(hashqueue -> head -> next == hashqueue -> tail);     // the head's next pointer points to the tail
@@ -136,14 +136,14 @@ static void queuePointersUpdatedSecondInsertion(void) {
 }
 
 static void insert3(void) {
-    QueueResultPair result = hashqueue -> enqueue(threads[0], hashqueue);
-    hashqueue = result.queue;
+    QueueResultPair result = hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) result.queue;
 
-    result = hashqueue -> enqueue(threads[1], hashqueue);
-    hashqueue = result.queue;
+    result = hashqueue -> enqueue(threads[1], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) result.queue;
 
-    result = hashqueue -> enqueue(threads[2], hashqueue);
-    hashqueue = result.queue;
+    result = hashqueue -> enqueue(threads[2], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) result.queue;
 
     assert(hashqueue -> size == 3);
     assert(hashqueue -> load_factor == (double) 3 / 128);
@@ -166,7 +166,7 @@ static void insert3(void) {
 
 static void linearProbing(void) {
     for (int i = 0; i <= 5; ++i) {
-        hashqueue -> enqueue(overlapping_threads[i], hashqueue);
+        hashqueue -> enqueue(overlapping_threads[i], (ThreadQueue*) hashqueue);
     }
 
     assert(hashqueue -> table[0] -> t -> id == 0);
@@ -185,13 +185,13 @@ static void linearProbing(void) {
 
 
 static void dequeueSizesChanged(void) {
-    hashqueue -> enqueue(threads[0], hashqueue);
-    hashqueue -> enqueue(threads[1], hashqueue);
-    hashqueue -> enqueue(threads[2], hashqueue);
+    hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    hashqueue -> enqueue(threads[1], (ThreadQueue*) hashqueue);
+    hashqueue -> enqueue(threads[2], (ThreadQueue*) hashqueue);
 
     double old_load_factor = hashqueue -> load_factor;
     int old_size = hashqueue -> size;
-    thread *dequeued = hashqueue -> dequeue(hashqueue);
+    thread *dequeued = hashqueue -> dequeue((ThreadQueue*) hashqueue);
 
     assert(hashqueue -> load_factor != old_load_factor);
     assert(hashqueue -> size == old_size - 1);
@@ -200,27 +200,27 @@ static void dequeueSizesChanged(void) {
 }
 
 static void dequeueEmptyFails(void) {
-    thread *dequeued = hashqueue -> dequeue(hashqueue);
+    thread *dequeued = hashqueue -> dequeue((ThreadQueue*) hashqueue);
     assert(dequeued == NULL);
 
     ++tests_passed;
 }
 
 static void dequeueCorrectElement(void) {
-    hashqueue -> enqueue(threads[0], hashqueue);
-    hashqueue -> enqueue(threads[1], hashqueue);
-    hashqueue -> enqueue(threads[2], hashqueue);
-    thread *dequeued = hashqueue -> dequeue(hashqueue);
+    hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    hashqueue -> enqueue(threads[1], (ThreadQueue*) hashqueue);
+    hashqueue -> enqueue(threads[2], (ThreadQueue*) hashqueue);
+    thread *dequeued = hashqueue -> dequeue((ThreadQueue*) hashqueue);
 
     assert(dequeued -> id == 0);
     ++tests_passed;
 }
 
 static void dequeuePointersMended(void) {
-    hashqueue -> enqueue(threads[0], hashqueue);
-    hashqueue -> enqueue(threads[1], hashqueue);
-    hashqueue -> enqueue(threads[2], hashqueue);
-    thread *dequeued = (thread*) hashqueue -> dequeue(hashqueue);
+    hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    hashqueue -> enqueue(threads[1], (ThreadQueue*) hashqueue);
+    hashqueue -> enqueue(threads[2], (ThreadQueue*) hashqueue);
+    thread *dequeued = (thread*) hashqueue -> dequeue((ThreadQueue*) hashqueue);
 
     assert(hashqueue -> head -> t -> id == 1);                  // new head is thread 1
     assert(hashqueue -> head -> prev == NULL);                  // new head has no prev element
@@ -230,10 +230,10 @@ static void dequeuePointersMended(void) {
 }
 
 static void dequeueTableMended(void) {
-    hashqueue -> enqueue(threads[0], hashqueue);
-    hashqueue -> enqueue(threads[1], hashqueue);
-    hashqueue -> enqueue(threads[2], hashqueue);
-    thread *dequeued = hashqueue -> dequeue(hashqueue);
+    hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    hashqueue -> enqueue(threads[1], (ThreadQueue*) hashqueue);
+    hashqueue -> enqueue(threads[2], (ThreadQueue*) hashqueue);
+    thread *dequeued = hashqueue -> dequeue((ThreadQueue*) hashqueue);
 
     // Table OK
     assert(hashqueue -> table[0] == NULL);
@@ -264,12 +264,12 @@ static void dequeueTableMended(void) {
 */
 static void dequeueTableRepairTest(void) {
     for (int i = 0; i <= 5; ++i) {
-        hashqueue -> enqueue(overlapping_threads[i], hashqueue);
+        hashqueue -> enqueue(overlapping_threads[i], (ThreadQueue*) hashqueue);
     }
 
     assert(hashqueue -> table[0] -> t -> id == 0);          // slot 0 occupied by thread 0
 
-    thread *dequeued = hashqueue -> dequeue(hashqueue);
+    thread *dequeued = hashqueue -> dequeue((ThreadQueue*) hashqueue);
 
     assert(hashqueue -> table[0] -> t -> id == 128);        // id 128 moved to slot 0
     assert(hashqueue -> table[0] -> table_index == 0);
@@ -292,10 +292,10 @@ static void dequeueTableRepairTest(void) {
 }
 
 static void dequeueLoneElementQPointersAmended(void) {
-    hashqueue -> enqueue(threads[0], hashqueue);
+    hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
     assert(hashqueue -> head == hashqueue -> tail);
 
-    hashqueue -> dequeue(hashqueue);
+    hashqueue -> dequeue((ThreadQueue*) hashqueue);
 
     assert(hashqueue -> head == NULL);
     assert(hashqueue -> tail == NULL);
@@ -309,10 +309,10 @@ static void dequeueLoneElementQPointersAmended(void) {
 
 static void removeByIDCorrectElement(void) {
     for (int i = 0; i < 10; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
-    thread *removed = (thread*) hashqueue -> removeByID(5, hashqueue);
+    thread *removed = (thread*) hashqueue -> removeByID(5, (ThreadQueue*) hashqueue);
     assert(removed -> id == 5);
 
     ++tests_passed;
@@ -320,11 +320,11 @@ static void removeByIDCorrectElement(void) {
 
 static void removeByIDSizeChanged(void) {
     for (int i = 0; i < 10; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
     assert(hashqueue -> size == 10);
-    hashqueue -> removeByID(0, (void*) hashqueue);
+    hashqueue -> removeByID(0, (void*) (ThreadQueue*) hashqueue);
     assert(hashqueue -> size == 9);
 
     ++tests_passed;
@@ -332,11 +332,11 @@ static void removeByIDSizeChanged(void) {
 
 static void removeByIDLoadFactorChanged(void) {
     for (int i = 0; i < 10; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
     assert(hashqueue -> load_factor == (double) 10 / 128);
-    hashqueue -> removeByID(0, (void*) hashqueue);
+    hashqueue -> removeByID(0, (ThreadQueue*) hashqueue);
     assert(hashqueue -> load_factor == (double) 9 / 128);
 
     ++tests_passed;
@@ -344,10 +344,10 @@ static void removeByIDLoadFactorChanged(void) {
 
 static void removeByIDNotFound(void) {
     for (int i = 0; i < 10; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
-    thread *found = hashqueue -> removeByID(42, hashqueue);
+    thread *found = hashqueue -> removeByID(42, (ThreadQueue*) hashqueue);
     assert(found == NULL);
     assert(hashqueue -> size == 10);
 
@@ -357,9 +357,9 @@ static void removeByIDNotFound(void) {
 static void removeByIDIntermediatePointersMended(void) {
     // Enqueue 10 threads, ids [0..9]
     for (int i = 0; i < 10; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
-    hashqueue -> removeByID(5, (void*) hashqueue);
+    hashqueue -> removeByID(5, (ThreadQueue*) hashqueue);
     Entry *entry4 = hashqueue -> table[4];
     Entry *entry6 = hashqueue -> table[6];
 
@@ -372,10 +372,10 @@ static void removeByIDIntermediatePointersMended(void) {
 static void removeByIDIntermediateTableAmended(void) {
     // Enqueue 10 threads, ids [0..9]
     for (int i = 0; i < 10; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
-    hashqueue -> removeByID(5, hashqueue);
+    hashqueue -> removeByID(5, (ThreadQueue*) hashqueue);
 
     assert(hashqueue -> table[5] == NULL);
 
@@ -385,11 +385,11 @@ static void removeByIDIntermediateTableAmended(void) {
 static void removeByIDHeadPointersAmended(void) {
     // Enqueue 10 threads, ids [0..9]
     for (int i = 0; i < 10; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
     
     assert(hashqueue -> head == hashqueue -> table[0]);
-    hashqueue -> removeByID(0, hashqueue);
+    hashqueue -> removeByID(0, (ThreadQueue*) hashqueue);
     assert(hashqueue -> head == hashqueue -> table[1]);
     assert(hashqueue -> table[2] -> prev == hashqueue -> head);
 
@@ -399,11 +399,11 @@ static void removeByIDHeadPointersAmended(void) {
 static void removeByIDHeadTableAmended(void) {
      // Enqueue 10 threads, ids [0..9]
     for (int i = 0; i < 10; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
     assert(hashqueue -> table[0] -> t -> id == 0);
-    hashqueue -> removeByID(0, hashqueue);
+    hashqueue -> removeByID(0, (ThreadQueue*) hashqueue);
 
     assert(hashqueue -> table[0] == NULL);
 
@@ -413,11 +413,11 @@ static void removeByIDHeadTableAmended(void) {
 static void removeByIDTailPointersAmended(void) {
     // Enqueue 10 threads, ids [0..9]
     for (int i = 0; i < 10; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
     
     assert(hashqueue -> tail == hashqueue -> table[9]);
-    hashqueue -> removeByID(9, hashqueue);
+    hashqueue -> removeByID(9, (ThreadQueue*) hashqueue);
     assert(hashqueue -> tail == hashqueue -> table[8]);
     assert(hashqueue -> table[7] -> next == hashqueue -> tail);
 
@@ -427,11 +427,11 @@ static void removeByIDTailPointersAmended(void) {
 static void removeByIDTailTableAmended(void) {
      // Enqueue 10 threads, ids [0..9]
     for (int i = 0; i < 10; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
     assert(hashqueue -> table[9] -> t -> id == 9);
-    hashqueue -> removeByID(9, hashqueue);
+    hashqueue -> removeByID(9, (ThreadQueue*) hashqueue);
 
     assert(hashqueue -> table[9] == NULL);
 
@@ -458,10 +458,10 @@ static void removeByIDTailTableAmended(void) {
 */
 static void removeByIDTableRepairTest(void) {
     for (int i = 0; i <= 5; ++i) {
-        hashqueue -> enqueue(overlapping_threads[i], hashqueue);
+        hashqueue -> enqueue(overlapping_threads[i], (ThreadQueue*) hashqueue);
     }
 
-    hashqueue -> removeByID(128, (void*) hashqueue);
+    hashqueue -> removeByID(128, (ThreadQueue*) hashqueue);
 
     assert(hashqueue -> table[1] -> t -> id == 256);        // id 256 moved to slot 1
     assert(hashqueue -> table[1] -> table_index == 1);
@@ -523,11 +523,11 @@ static void removeByIDTableRepairWrapAround(void) {
 
     // Enqueuing 124, 252, 380, 508
     for (int i = 1; i < 5; ++i) {
-        hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
     }
 
-    hashqueue -> enqueue(test_threads[0], hashqueue);
-    hashqueue -> enqueue(test_threads[5], hashqueue);
+    hashqueue -> enqueue(test_threads[0], (ThreadQueue*) hashqueue);
+    hashqueue -> enqueue(test_threads[5], (ThreadQueue*) hashqueue);
 
     assert(hashqueue -> table[0] -> t -> id == 0);
     assert(hashqueue -> table[1] -> t -> id == 636);
@@ -536,7 +536,7 @@ static void removeByIDTableRepairWrapAround(void) {
     assert(hashqueue -> table[126] -> t -> id == 380);
     assert(hashqueue -> table[127] -> t -> id == 508);
     
-    hashqueue -> removeByID(380, hashqueue);
+    hashqueue -> removeByID(380, (ThreadQueue*) hashqueue);
 
     /*
         508 moves into slot 126, vacated by removed thread 380
@@ -554,9 +554,9 @@ static void removeByIDTableRepairWrapAround(void) {
 
 
 static void removeByIDLoneElement(void) {
-    hashqueue -> enqueue(threads[0], hashqueue);
+    hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
 
-    hashqueue -> removeByID(0, hashqueue);
+    hashqueue -> removeByID(0, (ThreadQueue*) hashqueue);
     assert(hashqueue -> head == NULL);
     assert(hashqueue -> tail == NULL);
 
@@ -577,7 +577,7 @@ static void removeByIDDuplicateIDs(void) {
     }
 
     for (int i = 0; i < 4; ++i) {
-        hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
     }
 
     assert(hashqueue -> table[0] -> t -> id == 0);
@@ -585,7 +585,7 @@ static void removeByIDDuplicateIDs(void) {
     assert(hashqueue -> table[2] -> t -> id == 2);
     assert(hashqueue -> table[3] -> t -> id == 0);
 
-    hashqueue -> removeByID(0, hashqueue);
+    hashqueue -> removeByID(0, (ThreadQueue*) hashqueue);
 
     assert(hashqueue -> table[0] -> t -> id == 0);
     assert(hashqueue -> table[1] -> t -> id == 1);
@@ -600,30 +600,30 @@ static void removeByIDDuplicateIDs(void) {
 */
 
 static void containsTrue(void) {
-    hashqueue -> enqueue(threads[3], hashqueue);
-    assert(hashqueue -> contains(3, hashqueue) == 1);
+    hashqueue -> enqueue(threads[3], (ThreadQueue*) hashqueue);
+    assert(hashqueue -> contains(3, (ThreadQueue*) hashqueue) == 1);
 
     ++tests_passed;
 }
 
 static void containsFalse(void) {
-    assert(hashqueue -> contains(3, hashqueue) == 0);
+    assert(hashqueue -> contains(3, (ThreadQueue*) hashqueue) == 0);
 
     ++tests_passed;
 }
 
 static void containsFalseAfterDequeue(void) {
-    hashqueue -> enqueue(threads[3], hashqueue);
-    hashqueue -> dequeue(hashqueue);
-    assert(hashqueue -> contains(3, hashqueue) == 0);
+    hashqueue -> enqueue(threads[3], (ThreadQueue*) hashqueue);
+    hashqueue -> dequeue((ThreadQueue*) hashqueue);
+    assert(hashqueue -> contains(3, (ThreadQueue*) hashqueue) == 0);
 
     ++tests_passed;
 }
 
 static void containsFalseAfterRemoveByID(void) {
-    hashqueue -> enqueue(threads[3], hashqueue);
-    hashqueue -> removeByID(3, hashqueue);
-    assert(hashqueue -> contains(3, hashqueue) == 0);
+    hashqueue -> enqueue(threads[3], (ThreadQueue*) hashqueue);
+    hashqueue -> removeByID(3, (ThreadQueue*) hashqueue);
+    assert(hashqueue -> contains(3, (ThreadQueue*) hashqueue) == 0);
 
     ++tests_passed;
 }
@@ -645,15 +645,15 @@ static void containsContiguousBlockTest(void) {
     test_threads[3] -> id = 253;        // hashes to 125
 
     for (int i = 0; i < 4; ++i) {
-        hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
     }
 
     assert(hashqueue -> table[0] -> t -> id == 253);
 
-    hashqueue -> removeByID(126, hashqueue);
+    hashqueue -> removeByID(126, (ThreadQueue*) hashqueue);
 
-    assert(hashqueue -> contains(126, hashqueue) == 0);
-    assert(hashqueue -> contains(253, hashqueue) == 1);
+    assert(hashqueue -> contains(126, (ThreadQueue*) hashqueue) == 0);
+    assert(hashqueue -> contains(253, (ThreadQueue*) hashqueue) == 1);
 
     assert(hashqueue -> table[126] -> t -> id == 253);
 
@@ -667,27 +667,27 @@ static void containsContiguousBlockTest(void) {
 
 static void noRehashBeforeThreshold(void) {
     // do not surpass 50%
-    ThreadQueue* original_queue_address = hashqueue;
+    ThreadQueue* original_queue_address = (ThreadQueue*) hashqueue;
 
     for (int i = 0; i < 63; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
-    QueueResultPair final_enqueue = hashqueue -> enqueue(threads[63], hashqueue);
+    QueueResultPair final_enqueue = hashqueue -> enqueue(threads[63], (ThreadQueue*) hashqueue);
     assert(original_queue_address == final_enqueue.queue);
 
     ++tests_passed;
 }
 
 static void addressModifiedAfterRehash(void) {
-    ThreadQueue* original_queue_address = (ThreadQueue*) hashqueue;
+    HashQueue* original_queue_address = hashqueue;
 
     for (int i = 0; i < 64; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
-    QueueResultPair final_enqueue = hashqueue -> enqueue(threads[64], hashqueue);
-    hashqueue = final_enqueue.queue;
+    QueueResultPair final_enqueue = hashqueue -> enqueue(threads[64], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) final_enqueue.queue;
     assert(original_queue_address != hashqueue);
 
     ++tests_passed;
@@ -697,14 +697,14 @@ static void newTableQPointersCorrect(void) {
     ThreadQueue* original_queue_address = (ThreadQueue*) hashqueue;
 
     for (int i = 0; i < 64; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
     Entry *original_head = hashqueue -> head;
     Entry *next_up = hashqueue -> head -> next;
     Entry *original_tail = hashqueue -> tail; 
 
-    QueueResultPair final_enqueue = hashqueue -> enqueue(threads[64], hashqueue);
-    hashqueue = final_enqueue.queue;
+    QueueResultPair final_enqueue = hashqueue -> enqueue(threads[64], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) final_enqueue.queue;
     assert(original_head == hashqueue -> head);
     assert(next_up == hashqueue -> head -> next);
     assert(original_tail == hashqueue -> tail -> prev);
@@ -727,8 +727,8 @@ static void correctRehashLocations(void) {
 
     QueueResultPair result;
     for (int i = 0; i < 64; ++i) {
-        result = hashqueue -> enqueue(test_threads[i], hashqueue);
-        hashqueue = result.queue;
+        result = hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
+        hashqueue = (HashQueue*) result.queue;
     }
 
     // first 64 slots empty
@@ -743,8 +743,8 @@ static void correctRehashLocations(void) {
 
     // Add further 64 elements, forcing rehashing on first enqueue
     for (int i = 64; i < 128; ++i) {
-        result = hashqueue -> enqueue(test_threads[i], hashqueue);
-        hashqueue = result.queue;
+        result = hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
+        hashqueue = (HashQueue*) result.queue;
     }
 
     // New table
@@ -781,8 +781,8 @@ static void rehashTableFieldsUpdated(void) {
 
     QueueResultPair result;
     for (int i = 0; i < 64; ++i) {
-        result = hashqueue -> enqueue(test_threads[i], hashqueue);
-        hashqueue = result.queue;
+        result = hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
+        hashqueue = (HashQueue*) result.queue;
     }
 
     int old_size = hashqueue -> size;
@@ -790,8 +790,8 @@ static void rehashTableFieldsUpdated(void) {
     double old_load_factor = hashqueue -> load_factor;
 
     // Add 1 more element, forcing rehashing
-    result = hashqueue -> enqueue(test_threads[64], hashqueue);
-    hashqueue = result.queue;
+    result = hashqueue -> enqueue(test_threads[64], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) result.queue;
 
     int new_size = hashqueue -> size;
     int new_capacity = hashqueue -> capacity;
@@ -821,8 +821,8 @@ static void rehashFullChainMaintained(void) {
     QueueResultPair result;
     // IDs [64, 127]
     for (int i = 0; i < 64; ++i) {
-        result = hashqueue -> enqueue(test_threads[i], hashqueue);
-        hashqueue = result.queue;
+        result = hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
+        hashqueue = (HashQueue*) result.queue;
     }
 
     u16 original_ids[64];
@@ -834,8 +834,8 @@ static void rehashFullChainMaintained(void) {
     }
 
     // Add 1 more element, forcing rehashing
-    result = hashqueue -> enqueue(test_threads[64], hashqueue);
-    hashqueue = result.queue;
+    result = hashqueue -> enqueue(test_threads[64], (ThreadQueue*) hashqueue);
+    hashqueue = (HashQueue*) result.queue;
 
     // store ids in new table by following next pointers
     u16 test_ids[65];
@@ -857,52 +857,52 @@ static void rehashFullChainMaintained(void) {
     isEmpty tests
 */
 static void isEmptyTrue(void) {
-    assert(hashqueue -> isEmpty(hashqueue) == 1);
+    assert(hashqueue -> isEmpty((ThreadQueue*) hashqueue) == 1);
     ++tests_passed;
 }
 
 
 static void isEmptyFalse(void) {
     for (int i = 0; i < 4; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
-    assert(hashqueue -> isEmpty(hashqueue) == 0);
+    assert(hashqueue -> isEmpty((ThreadQueue*) hashqueue) == 0);
     ++tests_passed;
 }
 
 static void isEmptyFollowingDequeues(void) {
     for (int i = 0; i < 4; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
     for (int i = 0; i < 4; ++i) {
-        hashqueue -> dequeue(hashqueue);
+        hashqueue -> dequeue((ThreadQueue*) hashqueue);
     }
 
-    assert(hashqueue -> isEmpty(hashqueue) == 1);
+    assert(hashqueue -> isEmpty((ThreadQueue*) hashqueue) == 1);
     ++tests_passed;
 }
 
 static void isEmptyFollowingRemoveByIDs(void) {
     for (int i = 0; i < 4; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
     for (int i = 0; i < 4; ++i) {
-        hashqueue -> removeByID(i, hashqueue);
+        hashqueue -> removeByID(i, (ThreadQueue*) hashqueue);
     }
 
-    assert(hashqueue -> isEmpty(hashqueue) == 1);
+    assert(hashqueue -> isEmpty((ThreadQueue*) hashqueue) == 1);
     ++tests_passed;
 }
 
 static void isEmptyPointersAgreePositive(void) {
     for (int i = 0; i < 4; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
-    assert(hashqueue -> isEmpty(hashqueue) == 
+    assert(hashqueue -> isEmpty((ThreadQueue*) hashqueue) == 
         (hashqueue -> head == NULL && hashqueue -> tail == NULL));
 
     ++tests_passed;
@@ -910,17 +910,17 @@ static void isEmptyPointersAgreePositive(void) {
 
 static void isEmptyPointersAgreeNegative(void) {
     for (int i = 0; i < 4; ++i) {
-        hashqueue -> enqueue(threads[i], hashqueue);
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
-    assert(hashqueue -> isEmpty(hashqueue) == 
+    assert(hashqueue -> isEmpty((ThreadQueue*) hashqueue) == 
         (hashqueue -> head == NULL && hashqueue -> tail == NULL));
 
     for (int i = 0; i < 4; ++i) {
-        hashqueue -> removeByID(i, hashqueue);
+        hashqueue -> removeByID(i, (ThreadQueue*) hashqueue);
     }
 
-    assert(hashqueue -> isEmpty(hashqueue) == 
+    assert(hashqueue -> isEmpty((ThreadQueue*) hashqueue) == 
         (hashqueue -> head == NULL && hashqueue -> tail == NULL));
 
     ++tests_passed;
@@ -944,7 +944,7 @@ static void ohNoBadBad1(void) {
     test_threads[2] -> id = 129;
 
     for (int i = 0; i < 3; ++i) {
-        hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
     }
 
     // Before removeByID(0)
@@ -952,7 +952,7 @@ static void ohNoBadBad1(void) {
     assert(hashqueue -> table[1] -> t -> id == 1);
     assert(hashqueue -> table[2] -> t -> id == 129);
 
-    hashqueue -> removeByID(0, hashqueue);
+    hashqueue -> removeByID(0, (ThreadQueue*) hashqueue);
 
     // After removeByID(126)
     assert(hashqueue -> table[0] -> t -> id == 129);
@@ -977,7 +977,7 @@ static void tableRepairNoMoveTest1(void) {
     test_threads[2] -> id = 129;
 
     for (int i = 0; i < 3; ++i) {
-        hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
     }
 
     // Before removeByID(0)
@@ -985,7 +985,7 @@ static void tableRepairNoMoveTest1(void) {
     assert(hashqueue -> table[1] -> t -> id == 1);
     assert(hashqueue -> table[2] -> t -> id == 129);
 
-    hashqueue -> removeByID(0, hashqueue);
+    hashqueue -> removeByID(0, (ThreadQueue*) hashqueue);
 
     // After removeByID(126)
     assert(hashqueue -> table[0] == NULL);
@@ -1011,7 +1011,7 @@ static void ohNoBadBad2(void) {
     test_threads[2] -> id = 128;
 
     for (int i = 0; i < 3; ++i) {
-        hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
     }
 
     // Before removeByID(0)
@@ -1019,7 +1019,7 @@ static void ohNoBadBad2(void) {
     assert(hashqueue -> table[1] -> t -> id == 128);
     assert(hashqueue -> table[127] -> t -> id == 127);
 
-    hashqueue -> removeByID(127, hashqueue);
+    hashqueue -> removeByID(127, (ThreadQueue*) hashqueue);
 
     // After removeByID(0)
     assert(hashqueue -> table[0] -> t -> id == 0);
@@ -1044,7 +1044,7 @@ static void tableRepairNoMoveTest2(void) {
     test_threads[2] -> id = 128;
 
     for (int i = 0; i < 3; ++i) {
-        hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
     }
 
     // Before removeByID(0)
@@ -1052,7 +1052,7 @@ static void tableRepairNoMoveTest2(void) {
     assert(hashqueue -> table[1] -> t -> id == 128);
     assert(hashqueue -> table[127] -> t -> id == 127);
 
-    hashqueue -> removeByID(127, hashqueue);
+    hashqueue -> removeByID(127, (ThreadQueue*) hashqueue);
 
     // After removeByID(0)
     assert(hashqueue -> table[0] -> t -> id == 0);
@@ -1080,7 +1080,7 @@ static void ohNoBadBad3(void) {
     test_threads[2] -> id = 255;
 
     for (int i = 0; i < 3; ++i) {
-        hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
     }
 
     // Before removeByID(126)
@@ -1088,7 +1088,7 @@ static void ohNoBadBad3(void) {
     assert(hashqueue -> table[126] -> t -> id == 126);
     assert(hashqueue -> table[127] -> t -> id == 127);
 
-    hashqueue -> removeByID(126, hashqueue);
+    hashqueue -> removeByID(126, (ThreadQueue*) hashqueue);
 
     // After removeByID(126)
     assert(hashqueue -> table[0] == NULL);
@@ -1115,7 +1115,7 @@ static void tableRepairNoMoveTest3(void) {
     test_threads[2] -> id = 255;
 
     for (int i = 0; i < 3; ++i) {
-        hashqueue -> enqueue(test_threads[i], hashqueue);
+        hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
     }
 
     // Before removeByID(126)
@@ -1123,7 +1123,7 @@ static void tableRepairNoMoveTest3(void) {
     assert(hashqueue -> table[126] -> t -> id == 126);
     assert(hashqueue -> table[127] -> t -> id == 127);
 
-    hashqueue -> removeByID(126, hashqueue);
+    hashqueue -> removeByID(126, (ThreadQueue*) hashqueue);
 
     // After removeByID(126)
     assert(hashqueue -> table[0] -> t -> id == 255);

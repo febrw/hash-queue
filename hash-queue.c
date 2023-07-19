@@ -143,7 +143,8 @@ static thread *HashQueue_dequeue(ThreadQueue *queue) {
 }
 
 
-static thread *HashQueue_removeByID(u16 thread_id, HashQueue *hashqueue) {
+static thread *HashQueue_removeByID(u16 thread_id, ThreadQueue *queue) {
+    HashQueue *hashqueue = (HashQueue*) queue;
     const u16 table_mask = (hashqueue -> capacity) - 1;
     u16 inspect_index = thread_id & table_mask;
 

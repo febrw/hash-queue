@@ -27,6 +27,14 @@ struct Entry {
     u16 table_index;    // allows dequeuing without search
 };
 
+typedef struct Iterator Iterator;
+struct Iterator {
+    int (*hasNext)(Iterator* this);
+    thread* (*next)(Iterator* this);
+    Entry* currentEntry;
+};
+
+
 /*
     Enqueue may require rehashing, changing the queue's pointer
     The new address is returned along with the enqueue result (success/failure)
@@ -44,6 +52,7 @@ struct ThreadQueue {
     int (*contains) (u16, ThreadQueue*);                   // success/failure return value
     QueueResultPair (*enqueue) (thread*, ThreadQueue*);    // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
     int (*isEmpty) (ThreadQueue*);                         // success/failure return value
+    void (*resetIterator)(ThreadQueue* this);
 };
 
 
@@ -53,6 +62,9 @@ struct HashQueue {
     int (*contains) (u16, ThreadQueue*);                   // success/failure return value
     QueueResultPair (*enqueue) (thread*, ThreadQueue*);    // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
     int (*isEmpty) (ThreadQueue*);                         // success/failure return value
+    thread* (*removeByID) (u16, ThreadQueue*);               // Inputs: ID, queue. Output: removed element
+    Iterator* (*iterator)(ThreadQueue* this);
+ 
     // Hash Queue only
     int size;
     int capacity;                                          // must be a power of 2
@@ -60,9 +72,20 @@ struct HashQueue {
     Entry * head;
     Entry * tail;
     Entry ** table;                                        // malloc table, uses double pointers to allow rehashing to maintain next and prev pointers
-    void (*freeQueue) (HashQueue*);
-    thread* (*removeByID) (u16, HashQueue*);               // Inputs: ID, queue. Output: removed element
+    void (*freeQueue) (HashQueue*);  
 };
+/*
+thread* nextIt(Iterator* this) {
+    Entry* current = this->currentEntry;
+    this->currentEntry = this->currentEntry->next;
+    return current->t;
+}
+*/
+Iterator* (*iterator)(ThreadQueue* this);
+    // malloc up space for itertair struct
+    // set iteratir's currentEntry to be this->head
+    // set the pointers to the functions inside th eiteratr stuct 
+    // return pointer to the iterator
 
 
 HashQueue *HashQueue_new();
