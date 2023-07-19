@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "hash-queue.h"
 
-static const int tests_count = 49;
+static const int tests_count = 50;
 static int tests_passed = 0;
 
 static HashQueue *hashqueue;
@@ -244,11 +244,8 @@ static void dequeueTableMended(void) {
 }
 
 /*
-    Table repair procedure tests
-*/
+    Table repair procedure test
 
-
-/*
     Before:
     Slot    thread_id
     0       0
@@ -566,6 +563,38 @@ static void removeByIDLoneElement(void) {
     ++tests_passed;
 }
 
+static void removeByIDDuplicateIDs(void) {
+    thread* test_threads[4];
+
+    for (int i = 0; i < 4; ++i) {
+        test_threads[i] = malloc(sizeof(thread));
+        if (test_threads[i] == NULL) {
+            printf("mem alloc failed\n");
+            assert(1==0);
+        } else {
+            test_threads[i] -> id = i % 3;
+        }
+    }
+
+    for (int i = 0; i < 4; ++i) {
+        hashqueue -> enqueue(test_threads[i], hashqueue);
+    }
+
+    assert(hashqueue -> table[0] -> t -> id == 0);
+    assert(hashqueue -> table[1] -> t -> id == 1);
+    assert(hashqueue -> table[2] -> t -> id == 2);
+    assert(hashqueue -> table[3] -> t -> id == 0);
+
+    hashqueue -> removeByID(0, hashqueue);
+
+    assert(hashqueue -> table[0] -> t -> id == 0);
+    assert(hashqueue -> table[1] -> t -> id == 1);
+    assert(hashqueue -> table[2] -> t -> id == 2);
+    assert(hashqueue -> table[3] == NULL);
+
+    ++tests_passed;
+}
+
 /*
     Contains Tests
 */
@@ -584,7 +613,7 @@ static void containsFalse(void) {
 }
 
 static void containsFalseAfterDequeue(void) {
-    hashqueue -> enqueue( threads[3], hashqueue);
+    hashqueue -> enqueue(threads[3], hashqueue);
     hashqueue -> dequeue(hashqueue);
     assert(hashqueue -> contains(3, hashqueue) == 0);
 
@@ -1145,6 +1174,7 @@ int main(void) {
     runTest(removeByIDTableRepairTest);
     runTest(removeByIDTableRepairWrapAround);
     runTest(removeByIDLoneElement);
+    runTest(removeByIDDuplicateIDs);
 
     // Contains tests
     runTest(containsTrue);
