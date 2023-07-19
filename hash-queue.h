@@ -51,7 +51,9 @@ struct ThreadQueue {
     int (*contains) (u16, ThreadQueue*);                   // success/failure return value
     QueueResultPair (*enqueue) (thread*, ThreadQueue*);    // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
     int (*isEmpty) (ThreadQueue*);                         // success/failure return value
-    void (*resetIterator)(ThreadQueue* this);
+    thread* (*removeByID) (u16, ThreadQueue*);             // Inputs: ID, queue. Output: removed element
+    Iterator* (*iterator)(ThreadQueue* this);
+
 };
 
 
@@ -61,7 +63,7 @@ struct HashQueue {
     int (*contains) (u16, ThreadQueue*);                   // success/failure return value
     QueueResultPair (*enqueue) (thread*, ThreadQueue*);    // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
     int (*isEmpty) (ThreadQueue*);                         // success/failure return value
-    thread* (*removeByID) (u16, ThreadQueue*);               // Inputs: ID, queue. Output: removed element
+    thread* (*removeByID) (u16, ThreadQueue*);             // Inputs: ID, queue. Output: removed element
     Iterator* (*iterator)(ThreadQueue* this);
  
     // Hash Queue only
