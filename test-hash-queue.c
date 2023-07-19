@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "hash-queue.h"
 
-static const int tests_count = 50;
+static const int tests_count = 54;
 static int tests_passed = 0;
 
 static HashQueue *hashqueue;
@@ -37,7 +37,7 @@ static void initOK(void) {
 }
 
 static void setup() {
-    hashqueue = HashQueue_new();
+    hashqueue = new_HashQueue();
 }
 
 static void teardown() {
@@ -1133,6 +1133,48 @@ static void tableRepairNoMoveTest3(void) {
     ++tests_passed;
 }
 
+static void constructIteratorTest(void) {
+    Iterator *iterator = new_Iterator((ThreadQueue*) hashqueue);
+    assert(iterator != NULL);
+
+    ++tests_passed;
+}
+
+static void iteratorHasNextPositive(void) {
+    hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    Iterator *iterator = new_Iterator((ThreadQueue*) hashqueue);
+
+    assert(iterator -> hasNext(iterator) != 0);
+
+    ++tests_passed;
+}
+
+static void iteratorHasNextNegative(void) {
+    Iterator *iterator = new_Iterator((ThreadQueue*) hashqueue);
+    assert(iterator -> hasNext(iterator) == 0);
+
+    ++tests_passed;
+}
+
+static void iteratorExampleUsage(void) {
+    for (int i = 0; i < 8; ++i) {
+        hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
+    }
+
+    Iterator *it = new_Iterator((ThreadQueue*) hashqueue);
+    int current_thread_id;
+
+    int ideal_thread_id = 0;
+    while (it -> hasNext(it)) {
+        current_thread_id = (it -> next(it)) -> id;
+        assert(ideal_thread_id == current_thread_id);
+        ++ideal_thread_id;
+    }
+
+    ++tests_passed;
+}
+
+
 int main(void) {
     // Setup global test variables
     initialiseBasicThreads();
@@ -1200,7 +1242,6 @@ int main(void) {
     runTest(isEmptyPointersAgreeNegative);
 
 
-    // BAD FIX
     //runTest(ohNoBadBad1);
     //runTest(ohNoBadBad2);
     //runTest(ohNoBadBad3);
@@ -1209,6 +1250,12 @@ int main(void) {
     runTest(tableRepairNoMoveTest1);
     runTest(tableRepairNoMoveTest2);
     runTest(tableRepairNoMoveTest3);
+
+    // Iterator tests
+    runTest(constructIteratorTest);
+    runTest(iteratorHasNextPositive);
+    runTest(iteratorHasNextNegative);
+    runTest(iteratorExampleUsage);
 
     printf("Passed %u/%u tests.\n", tests_passed, tests_count);
     return 0; 

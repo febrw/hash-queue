@@ -1,6 +1,8 @@
-#include "hash-queue.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "hash-queue.h"
+
 
 //------------------------------ HashQueue ADT IMPLEMENTATIONS ------------------------------
 
@@ -228,7 +230,7 @@ static void HashQueue_free(HashQueue *this) {
 /*
     Returns 0 if any malloc failed, 1 otherwise.
 */
-int HashQueue_init(HashQueue *this) {
+int init_HashQueue(HashQueue *this) {
     this -> size = 0;
     this -> capacity = INITIAL_CAPACITY;
     this -> load_factor = 0.0;
@@ -253,14 +255,14 @@ int HashQueue_init(HashQueue *this) {
 }
 
 /*
-    - Allocates Memory for the HashQueue, then populates with HashQueue_init
+    - Allocates Memory for the HashQueue, then populates with init_HashQueue
 */
-HashQueue *HashQueue_new() {
+HashQueue *new_HashQueue() {
     HashQueue *this = malloc(sizeof(HashQueue));
     if (this == NULL) {
         return NULL;
     }
-    int successful_initialisation = HashQueue_init(this);
+    int successful_initialisation = init_HashQueue(this);
     if (successful_initialisation == 0) { // if some memory allocoation failed during construction
         return NULL;
     } else {

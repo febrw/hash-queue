@@ -1,7 +1,6 @@
 #ifndef HASH_QUEUE_H
 #define HASH_QUEUE_H
 
-
 typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned char u8;
@@ -14,24 +13,24 @@ typedef struct Entry Entry;
 typedef struct HashQueue HashQueue;
 typedef struct QueueResultPair QueueResultPair;
 typedef struct ThreadQueue ThreadQueue;
+typedef struct Iterator Iterator;
+
 
 struct thread {
     u16 id;
 };
 
-
 struct Entry {
-    Entry * prev;
-    Entry * next;
-    thread * t;         // value
+    Entry *prev;
+    Entry *next;
+    thread *t;         // value
     u16 table_index;    // allows dequeuing without search
 };
 
-typedef struct Iterator Iterator;
 struct Iterator {
-    int (*hasNext)(Iterator* this);
-    thread* (*next)(Iterator* this);
-    Entry* currentEntry;
+    int (*hasNext) (Iterator*);
+    thread* (*next) (Iterator*);
+    Entry *currentEntry;
 };
 
 
@@ -74,22 +73,12 @@ struct HashQueue {
     Entry ** table;                                        // malloc table, uses double pointers to allow rehashing to maintain next and prev pointers
     void (*freeQueue) (HashQueue*);  
 };
-/*
-thread* nextIt(Iterator* this) {
-    Entry* current = this->currentEntry;
-    this->currentEntry = this->currentEntry->next;
-    return current->t;
-}
-*/
-Iterator* (*iterator)(ThreadQueue* this);
-    // malloc up space for itertair struct
-    // set iteratir's currentEntry to be this->head
-    // set the pointers to the functions inside th eiteratr stuct 
-    // return pointer to the iterator
 
 
-HashQueue *HashQueue_new();
-int HashQueue_init(HashQueue*);
+HashQueue *new_HashQueue();
+int init_HashQueue(HashQueue*);
 QueueResultPair HashQueue_rehash(HashQueue*); 
+
+Iterator *new_Iterator(ThreadQueue*);
 
 #endif /* HASH_QUEUE_H */
