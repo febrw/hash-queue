@@ -188,7 +188,7 @@ static thread *HashQueue_removeByID(u16 thread_id, ThreadQueue *queue) {
 
 }
 
-static int HashQueue_contains(u16 thread_id, ThreadQueue* queue) {
+static thread *HashQueue_getByID(u16 thread_id, ThreadQueue* queue) {
     HashQueue* hashqueue = (HashQueue*) queue;
     const u16 table_mask = (hashqueue -> capacity) - 1;
     u16 table_index = thread_id & table_mask;
@@ -197,12 +197,16 @@ static int HashQueue_contains(u16 thread_id, ThreadQueue* queue) {
     {
         Entry* curr = hashqueue -> table[table_index];
         if (curr -> t -> id == thread_id) {
-            return 1;
+            return curr -> t;
         } else {
             table_index = (table_index + 1) & table_mask;
         }
     }
-    return 0;
+    return NULL;
+}
+
+static int HashQueue_contains(u16 thread_id, ThreadQueue* queue) {
+    return (queue -> getByID(thread_id, queue) != NULL);
 }
 
 static int HashQueue_isEmpty(ThreadQueue* queue) {
@@ -282,6 +286,7 @@ int init_HashQueue(HashQueue *this) {
     this -> enqueue = HashQueue_enqueue;
     this -> isEmpty = HashQueue_isEmpty;
     this -> removeByID = HashQueue_removeByID;
+    this -> getByID = HashQueue_getByID;
     this -> iterator = new_Iterator;
     this -> size = HashQueue_size;
     this -> freeQueue = HashQueue_free;
@@ -345,6 +350,7 @@ QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
     new_queue -> enqueue = HashQueue_enqueue;
     new_queue -> isEmpty = HashQueue_isEmpty;
     new_queue -> removeByID = HashQueue_removeByID;
+    new_queue -> getByID = HashQueue_getByID;
     new_queue -> iterator = new_Iterator;
     new_queue -> size = HashQueue_size;
     new_queue -> freeQueue = HashQueue_free;
