@@ -8,7 +8,7 @@ static int tests_passed = 0;
 
 static ThreadQueue *threadqueue;
 static HashQueue *hashqueue;
-static thread* threads[128];
+static thread* threads[256];
 static thread* overlapping_threads[10];
 
 static void initialiseOverlappingThreads(void) {
@@ -25,14 +25,14 @@ static void initialiseOverlappingThreads(void) {
 }
 
 static void initialiseBasicThreads(void) {
-    for (u16 i = 0; i < 128; ++i) {
+    for (u16 i = 0; i < 256; ++i) {
         threads[i] = malloc(sizeof(thread));
         threads[i] -> id = i;
     }
 }
 
 static void initOK(void) {
-    for (int i = 0; i < 128; ++i) {
+    for (int i = 0; i < 256; ++i) {
         printf("Thread %d: ID: %u.\n", i, threads[i] -> id);
     }
 }
@@ -717,6 +717,21 @@ static void removeByIDDuplicateIDs(void) {
     ++tests_passed;
 }
 
+static void removeByIDTableIndicesUpdated(void) {
+    thread* test_threads[16];
+
+    for (int i = 0; i < 16; ++i) {
+        test_threads[i] = malloc(sizeof(thread));
+        if (test_threads[i] == NULL) {
+            printf("Mem alloc failed.\n");
+            assert(1==0);
+        }
+    }
+
+    printf("FIX: removeByIDTableIndicesUpdated\n");
+    //++tests_passed; 
+}
+
 /*
     Contains Tests
 */
@@ -1307,6 +1322,7 @@ int main(void) {
     runTest(removeByIDTableRepairWrapAround);
     runTest(removeByIDLoneElement);
     runTest(removeByIDDuplicateIDs);
+    runTest(removeByIDTableIndicesUpdated);
 
     // Contains tests
     runTest(containsTrue);
@@ -1317,16 +1333,10 @@ int main(void) {
 
     // Rehashing tests
     runTest(noRehashBeforeThreshold);
-    
     runTest(addressModifiedAfterRehash);
-
-    
     runTest(newTableQPointersCorrect);
-    
     runTest(correctRehashLocations);
-    
     runTest(rehashTableFieldsUpdated);
-    
     runTest(rehashFullChainMaintained);
 
     // isEmpty tests
