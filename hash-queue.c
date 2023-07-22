@@ -11,12 +11,12 @@
 */
 static QueueResultPair HashQueue_enqueue(thread *t, ThreadQueue *queue) {
 
-    HashQueue *hash_queue = (HashQueue*) queue;
+    HashQueue *hashqueue = (HashQueue*) queue;
     const u16 thread_id = t -> id;
-    const u16 table_mask = (hash_queue -> capacity) - 1;
+    const u16 table_mask = (hashqueue -> capacity) - 1;
     u16 table_index = thread_id & table_mask;
 
-    while (hash_queue -> table[table_index] != NULL) // iterate while positions unavailable
+    while (hashqueue -> table[table_index] != NULL) // iterate while positions unavailable
     {
         table_index = (table_index + 1) & table_mask;
     }
@@ -35,27 +35,27 @@ static QueueResultPair HashQueue_enqueue(thread *t, ThreadQueue *queue) {
     new_entry -> table_index = table_index;
     
     // Linked List pointers update
-    if (hash_queue -> isEmpty((ThreadQueue*) hash_queue)) {
-        hash_queue -> tail = hash_queue -> head = new_entry;
+    if (hashqueue -> isEmpty((ThreadQueue*) hashqueue)) {
+        hashqueue -> tail = hashqueue -> head = new_entry;
     } else {
-        new_entry -> prev = hash_queue -> tail;
+        new_entry -> prev = hashqueue -> tail;
         new_entry -> next = NULL;
-        hash_queue -> tail -> next = new_entry;
-        hash_queue -> tail = new_entry;
+        hashqueue -> tail -> next = new_entry;
+        hashqueue -> tail = new_entry;
     }
     
 
-    hash_queue -> table[table_index] = new_entry;
-    ++ hash_queue -> _size;
+    hashqueue -> table[table_index] = new_entry;
+    ++ hashqueue -> _size;
 
-    hash_queue -> load_factor = (double) hash_queue -> _size / hash_queue -> capacity;
+    hashqueue -> load_factor = (double) hashqueue -> _size / hashqueue -> capacity;
     QueueResultPair result;
 
     // Check if rehashing required
-    if (hash_queue -> load_factor > REHASH_THRESHOLD) {
-        result = HashQueue_rehash(hash_queue);
+    if (hashqueue -> load_factor > REHASH_THRESHOLD) {
+        result = HashQueue_rehash(hashqueue);
     } else {
-        result.queue = (ThreadQueue*) hash_queue;
+        result.queue = (ThreadQueue*) hashqueue;
         result.result = 1;
     }
 
