@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "hash-queue.h"
 
-static const int test_count = 62;
+static const int test_count = 67;
 static int tests_passed = 0;
 
 static ThreadQueue *threadqueue;
@@ -865,6 +865,69 @@ static void removeByIDTableIndicesUpdated2(void) {
 }
 
 /*
+    GetByID tests
+*/
+
+static void getByIDFalseReturnsNull(void) {
+    thread* retrieved = threadqueue -> getByID(0, threadqueue);
+    assert(retrieved == NULL);
+
+    ++tests_passed;
+}
+
+static void getByIDReturnsCorrect(void) {
+    QueueResultPair result = threadqueue -> enqueue(threads[10], threadqueue);
+    threadqueue = result.queue;
+
+    thread* retrieved = threadqueue -> getByID(10, threadqueue);
+    assert(retrieved != NULL);
+    assert(retrieved -> id == 10);
+
+    ++tests_passed;
+}
+
+static void getByIDNoModifications(void) {
+    QueueResultPair result = threadqueue -> enqueue(threads[10], threadqueue);
+    threadqueue = result.queue;
+
+    thread* retrieved = threadqueue -> getByID(10, threadqueue);
+    assert(threadqueue -> size(threadqueue) == 1);
+    assert(threadqueue -> isEmpty(threadqueue) == 0);
+
+    ++tests_passed;
+}
+
+static void getByIDTwiceSameElementFound(void) {
+    QueueResultPair result = threadqueue -> enqueue(threads[10], threadqueue);
+    threadqueue = result.queue;
+
+    thread* retrieved1 = threadqueue -> getByID(10, threadqueue);
+    thread* retrieved2 = threadqueue -> getByID(10, threadqueue);
+    assert(retrieved1 == retrieved2);
+    
+    ++tests_passed;
+}
+
+static void getByIDDuplicateElemsSameFound(void) {
+    QueueResultPair result;
+    for (int i = 0; i < 3; ++i) {
+        result = threadqueue -> enqueue(threads[0], threadqueue);
+        threadqueue = result.queue;
+    }
+    hashqueue = (HashQueue*) threadqueue;
+    
+    for (int i = 0; i < 3; ++i) {
+        assert(hashqueue -> table[i] -> t -> id == 0);
+    }
+
+    thread* retrieved1 = threadqueue -> getByID(0, threadqueue);
+    thread* retrieved2 = threadqueue -> getByID(0, threadqueue);
+    assert(retrieved1 == retrieved2);
+    
+    ++tests_passed;
+}
+
+/*
     Contains Tests
 */
 
@@ -926,6 +989,8 @@ static void containsContiguousBlockTest(void) {
     threadqueue -> removeByID(126, threadqueue);
 
     assert(threadqueue -> contains(126, threadqueue) == 0);
+    assert(threadqueue -> contains(125, threadqueue) == 1);
+    assert(threadqueue -> contains(127, threadqueue) == 1);
     assert(threadqueue -> contains(253, threadqueue) == 1);
 
     assert(hashqueue -> table[126] -> t -> id == 253);
@@ -1479,6 +1544,13 @@ int main(void) {
     runTest(removeByIDDuplicateIDs);
     runTest(removeByIDTableIndicesUpdated1);
     runTest(removeByIDTableIndicesUpdated2);
+
+    // GetByID tests
+    runTest(getByIDFalseReturnsNull);
+    runTest(getByIDReturnsCorrect);
+    runTest(getByIDNoModifications);
+    runTest(getByIDTwiceSameElementFound);
+    runTest(getByIDDuplicateElemsSameFound);
 
     // Contains tests
     runTest(containsTrue);
