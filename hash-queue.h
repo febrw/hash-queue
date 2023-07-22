@@ -52,8 +52,9 @@ struct ThreadQueue {
     QueueResultPair (*enqueue) (thread*, ThreadQueue*);    // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
     int (*isEmpty) (ThreadQueue*);                         // success/failure return value
     thread* (*removeByID) (u16, ThreadQueue*);             // Inputs: ID, queue. Output: removed element
-    Iterator* (*iterator)(ThreadQueue* this);
-
+    Iterator* (*iterator)(ThreadQueue*);                   // Constructs an iterator over the ThreadQueue
+    int (*size) (ThreadQueue*);                            // Returns the number of elements in the ThreadQueue
+    void (*freeQueue) (ThreadQueue*);
 };
 
 
@@ -64,16 +65,18 @@ struct HashQueue {
     QueueResultPair (*enqueue) (thread*, ThreadQueue*);    // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
     int (*isEmpty) (ThreadQueue*);                         // success/failure return value
     thread* (*removeByID) (u16, ThreadQueue*);             // Inputs: ID, queue. Output: removed element
-    Iterator* (*iterator)(ThreadQueue* this);
- 
+    Iterator* (*iterator)(ThreadQueue*);
+    int (*size) (ThreadQueue*);                            // Returns the number of elements in the HashQueue
+    void (*freeQueue) (ThreadQueue*);
+
     // Hash Queue only
-    int size;
+    int _size;
     int capacity;                                          // must be a power of 2
     double load_factor;                                    // [0,1]
-    Entry * head;
-    Entry * tail;
-    Entry ** table;                                        // malloc table, uses double pointers to allow rehashing to maintain next and prev pointers
-    void (*freeQueue) (HashQueue*);  
+    Entry *head;
+    Entry *tail;
+    Entry **table;                                        // malloc table, uses double pointers to allow rehashing to maintain next and prev pointers
+      
 };
 
 

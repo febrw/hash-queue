@@ -3,9 +3,10 @@
 #include <stdlib.h>
 #include "hash-queue.h"
 
-static const int tests_count = 54;
+static const int tests_count = 56;
 static int tests_passed = 0;
 
+static ThreadQueue *threadqueue;
 static HashQueue *hashqueue;
 static thread* threads[128];
 static thread* overlapping_threads[10];
@@ -38,10 +39,12 @@ static void initOK(void) {
 
 static void setup() {
     hashqueue = new_HashQueue();
+    threadqueue = (ThreadQueue*) hashqueue;
+
 }
 
 static void teardown() {
-    hashqueue -> freeQueue(hashqueue);
+    hashqueue -> freeQueue((ThreadQueue*) hashqueue);
 }
 
 static void runTest(void (*testFunction) (void)) {
@@ -55,7 +58,7 @@ static void runTest(void (*testFunction) (void)) {
 */
 
 static void constructionTest(void) {
-    assert(hashqueue -> size == 0);
+    assert(hashqueue -> _size == 0);
     assert(hashqueue -> load_factor == 0.0);
     assert(hashqueue -> table != NULL);
     assert(hashqueue -> head == NULL);
@@ -72,7 +75,7 @@ static void sizeModified(void) {
     QueueResultPair result = hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
     hashqueue = (HashQueue*) result.queue;
 
-    assert(hashqueue -> size == 1);                 // size is 1
+    assert(hashqueue -> _size == 1);                 // _size is 1
     assert(hashqueue -> isEmpty((ThreadQueue*) hashqueue) == 0);   // queue not empty
     assert(hashqueue -> load_factor != 0);          // load factor has changed
     assert(hashqueue -> load_factor == (double) 1 / hashqueue -> capacity);
@@ -145,7 +148,7 @@ static void insert3(void) {
     result = hashqueue -> enqueue(threads[2], (ThreadQueue*) hashqueue);
     hashqueue = (HashQueue*) result.queue;
 
-    assert(hashqueue -> size == 3);
+    assert(hashqueue -> _size == 3);
     assert(hashqueue -> load_factor == (double) 3 / 128);
 
     assert(hashqueue -> head -> next -> t == threads[1]);   // head next OK
@@ -190,11 +193,11 @@ static void dequeueSizesChanged(void) {
     hashqueue -> enqueue(threads[2], (ThreadQueue*) hashqueue);
 
     double old_load_factor = hashqueue -> load_factor;
-    int old_size = hashqueue -> size;
+    int old_size = hashqueue -> _size;
     thread *dequeued = hashqueue -> dequeue((ThreadQueue*) hashqueue);
 
     assert(hashqueue -> load_factor != old_load_factor);
-    assert(hashqueue -> size == old_size - 1);
+    assert(hashqueue -> _size == old_size - 1);
 
     ++tests_passed;
 }
@@ -323,9 +326,9 @@ static void removeByIDSizeChanged(void) {
         hashqueue -> enqueue(threads[i], (ThreadQueue*) hashqueue);
     }
 
-    assert(hashqueue -> size == 10);
+    assert(hashqueue -> _size == 10);
     hashqueue -> removeByID(0, (void*) (ThreadQueue*) hashqueue);
-    assert(hashqueue -> size == 9);
+    assert(hashqueue -> _size == 9);
 
     ++tests_passed;
 }
@@ -349,7 +352,7 @@ static void removeByIDNotFound(void) {
 
     thread *found = hashqueue -> removeByID(42, (ThreadQueue*) hashqueue);
     assert(found == NULL);
-    assert(hashqueue -> size == 10);
+    assert(hashqueue -> _size == 10);
 
     ++tests_passed;
 }
@@ -785,7 +788,7 @@ static void rehashTableFieldsUpdated(void) {
         hashqueue = (HashQueue*) result.queue;
     }
 
-    int old_size = hashqueue -> size;
+    int old_size = hashqueue -> _size;
     int old_capacity = hashqueue -> capacity;
     double old_load_factor = hashqueue -> load_factor;
 
@@ -793,7 +796,7 @@ static void rehashTableFieldsUpdated(void) {
     result = hashqueue -> enqueue(test_threads[64], (ThreadQueue*) hashqueue);
     hashqueue = (HashQueue*) result.queue;
 
-    int new_size = hashqueue -> size;
+    int new_size = hashqueue -> _size;
     int new_capacity = hashqueue -> capacity;
     double new_load_factor = hashqueue -> load_factor;
     
@@ -928,38 +931,7 @@ static void isEmptyPointersAgreeNegative(void) {
 
 
 
-static void ohNoBadBad1(void) {
-    thread* test_threads[3];
 
-    for (int i = 0; i < 3; ++i) {
-        test_threads[i] = malloc(sizeof(thread));
-        if (test_threads[i] == NULL) {
-            printf("mem alloc failed\n");
-            assert(1==0);
-        }
-    }
-
-    test_threads[0] -> id = 0;
-    test_threads[1] -> id = 1;
-    test_threads[2] -> id = 129;
-
-    for (int i = 0; i < 3; ++i) {
-        hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
-    }
-
-    // Before removeByID(0)
-    assert(hashqueue -> table[0] -> t -> id == 0);
-    assert(hashqueue -> table[1] -> t -> id == 1);
-    assert(hashqueue -> table[2] -> t -> id == 129);
-
-    hashqueue -> removeByID(0, (ThreadQueue*) hashqueue);
-
-    // After removeByID(126)
-    assert(hashqueue -> table[0] -> t -> id == 129);
-    assert(hashqueue -> table[1] -> t -> id == 1);
-    assert(hashqueue -> table[2] == NULL);
-    printf("bad test1 ran.\n");
-}
 
 static void tableRepairNoMoveTest1(void) {
     thread* test_threads[3];
@@ -995,38 +967,6 @@ static void tableRepairNoMoveTest1(void) {
     ++tests_passed;
 }
 
-static void ohNoBadBad2(void) {
-    thread* test_threads[3];
-
-    for (int i = 0; i < 3; ++i) {
-        test_threads[i] = malloc(sizeof(thread));
-        if (test_threads[i] == NULL) {
-            printf("mem alloc failed\n");
-            assert(1==0);
-        }
-    }
-
-    test_threads[0] -> id = 0;
-    test_threads[1] -> id = 127;
-    test_threads[2] -> id = 128;
-
-    for (int i = 0; i < 3; ++i) {
-        hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
-    }
-
-    // Before removeByID(0)
-    assert(hashqueue -> table[0] -> t -> id == 0);
-    assert(hashqueue -> table[1] -> t -> id == 128);
-    assert(hashqueue -> table[127] -> t -> id == 127);
-
-    hashqueue -> removeByID(127, (ThreadQueue*) hashqueue);
-
-    // After removeByID(0)
-    assert(hashqueue -> table[0] -> t -> id == 0);
-    assert(hashqueue -> table[1] == NULL);
-    assert(hashqueue -> table[127] -> t -> id == 128);
-    printf("bad test2 ran.\n");
-}
 
 static void tableRepairNoMoveTest2(void) {
     thread* test_threads[3];
@@ -1064,40 +1004,7 @@ static void tableRepairNoMoveTest2(void) {
 
 
 
-static void ohNoBadBad3(void) {
-    thread* test_threads[3];
 
-    for (int i = 0; i < 3; ++i) {
-        test_threads[i] = malloc(sizeof(thread));
-        if (test_threads[i] == NULL) {
-            printf("mem alloc failed\n");
-            assert(1==0);
-        }
-    }
-
-    test_threads[0] -> id = 126;
-    test_threads[1] -> id = 127;
-    test_threads[2] -> id = 255;
-
-    for (int i = 0; i < 3; ++i) {
-        hashqueue -> enqueue(test_threads[i], (ThreadQueue*) hashqueue);
-    }
-
-    // Before removeByID(126)
-    assert(hashqueue -> table[0] -> t -> id == 255);
-    assert(hashqueue -> table[126] -> t -> id == 126);
-    assert(hashqueue -> table[127] -> t -> id == 127);
-
-    hashqueue -> removeByID(126, (ThreadQueue*) hashqueue);
-
-    // After removeByID(126)
-    assert(hashqueue -> table[0] == NULL);
-    assert(hashqueue -> table[126] -> t -> id == 255);
-    assert(hashqueue -> table[127] -> t -> id == 127);
-
-    printf("bad test3 ran.\n");
-
-}
 
 static void tableRepairNoMoveTest3(void) {
     thread* test_threads[3];
@@ -1137,24 +1044,52 @@ static void constructIteratorTest(void) {
     Iterator *iterator = new_Iterator((ThreadQueue*) hashqueue);
     assert(iterator != NULL);
 
+    free(iterator);
     ++tests_passed;
 }
 
-static void iteratorHasNextPositive(void) {
+static void iteratorHasNextTrue(void) {
     hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
     Iterator *iterator = new_Iterator((ThreadQueue*) hashqueue);
 
     assert(iterator -> hasNext(iterator) != 0);
 
+    free(iterator);
     ++tests_passed;
 }
 
-static void iteratorHasNextNegative(void) {
+static void iteratorHasNextEmptyFalse(void) {
     Iterator *iterator = new_Iterator((ThreadQueue*) hashqueue);
     assert(iterator -> hasNext(iterator) == 0);
 
+    free(iterator);
     ++tests_passed;
 }
+
+static void iteratorHasNextDoesNotModify(void) {
+    hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    Iterator *iterator = new_Iterator((ThreadQueue*) hashqueue);
+
+    assert(iterator -> hasNext(iterator) != 0);
+    assert(iterator -> hasNext(iterator) != 0);
+    assert(iterator -> hasNext(iterator) != 0);
+
+    free(iterator);
+    ++tests_passed;
+}
+
+static void iteratorCorrectNext(void) {
+    hashqueue -> enqueue(threads[0], (ThreadQueue*) hashqueue);
+    Iterator *iterator = new_Iterator((ThreadQueue*) hashqueue);
+
+    assert(iterator -> hasNext(iterator) != 0);         // next exists
+    assert(iterator -> next(iterator) == threads[0]);   // correct thread reference returned
+    assert(iterator -> hasNext(iterator) == 0);         // no further next element
+
+    free(iterator);
+    ++tests_passed;
+}
+
 
 static void iteratorExampleUsage(void) {
     for (int i = 0; i < 8; ++i) {
@@ -1162,17 +1097,19 @@ static void iteratorExampleUsage(void) {
     }
 
     Iterator *it = new_Iterator((ThreadQueue*) hashqueue);
-    int current_thread_id;
+    thread *current_thread;
 
-    int ideal_thread_id = 0;
+    int idx = 0;
     while (it -> hasNext(it)) {
-        current_thread_id = (it -> next(it)) -> id;
-        assert(ideal_thread_id == current_thread_id);
-        ++ideal_thread_id;
+        current_thread = (it -> next(it));
+        assert(current_thread == threads[idx]);
+        ++idx;
     }
 
+    free(it);
     ++tests_passed;
 }
+
 
 
 int main(void) {
@@ -1240,11 +1177,6 @@ int main(void) {
     runTest(isEmptyFollowingRemoveByIDs);
     runTest(isEmptyPointersAgreePositive);
     runTest(isEmptyPointersAgreeNegative);
-
-
-    //runTest(ohNoBadBad1);
-    //runTest(ohNoBadBad2);
-    //runTest(ohNoBadBad3);
     
     // Table repair tests
     runTest(tableRepairNoMoveTest1);
@@ -1253,8 +1185,10 @@ int main(void) {
 
     // Iterator tests
     runTest(constructIteratorTest);
-    runTest(iteratorHasNextPositive);
-    runTest(iteratorHasNextNegative);
+    runTest(iteratorHasNextTrue);
+    runTest(iteratorHasNextEmptyFalse);
+    runTest(iteratorHasNextDoesNotModify);
+    runTest(iteratorCorrectNext);
     runTest(iteratorExampleUsage);
 
     printf("Passed %u/%u tests.\n", tests_passed, tests_count);

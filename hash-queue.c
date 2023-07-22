@@ -46,9 +46,9 @@ static QueueResultPair HashQueue_enqueue(thread *t, ThreadQueue *queue) {
     
 
     hash_queue -> table[table_index] = new_entry;
-    ++ hash_queue -> size;
+    ++ hash_queue -> _size;
 
-    hash_queue -> load_factor = (double) hash_queue -> size / hash_queue -> capacity;
+    hash_queue -> load_factor = (double) hash_queue -> _size / hash_queue -> capacity;
     QueueResultPair result;
 
     // Check if rehashing required
@@ -122,8 +122,8 @@ static thread *HashQueue_dequeue(ThreadQueue *queue) {
 
     // Update hashqueue fields
     hashqueue -> table[table_index] = NULL;
-    -- hashqueue -> size;
-    hashqueue -> load_factor = (double) hashqueue -> size / hashqueue -> capacity;
+    -- hashqueue -> _size;
+    hashqueue -> load_factor = (double) hashqueue -> _size / hashqueue -> capacity;
     
 
     // Update Linked List pointers
@@ -172,8 +172,8 @@ static thread *HashQueue_removeByID(u16 thread_id, ThreadQueue *queue) {
             }
             // Table fields update
             hashqueue -> table[inspect_index] = NULL;       // remove entry from table
-            -- hashqueue -> size;                           // record size change
-            hashqueue -> load_factor = (double) hashqueue -> size / hashqueue -> capacity;
+            -- hashqueue -> _size;                           // record _size change
+            hashqueue -> load_factor = (double) hashqueue -> _size / hashqueue -> capacity;
             thread* found = curr -> t;
 
             HashQueue_tableRepair(inspect_index, hashqueue);
@@ -206,8 +206,13 @@ static int HashQueue_contains(u16 thread_id, ThreadQueue* queue) {
 }
 
 static int HashQueue_isEmpty(ThreadQueue* queue) {
-    HashQueue * hashqueue = (HashQueue*) queue;
-    return (hashqueue -> size == 0);
+    HashQueue *hashqueue = (HashQueue*) queue;
+    return (hashqueue -> _size == 0);
+}
+
+static int HashQueue_size(ThreadQueue* queue) {
+    HashQueue *hashqueue = (HashQueue*) queue;
+    return hashqueue -> _size;
 }
 
 //----------------------------------- CONSTRUCTORS + DESTRUCTOR -----------------------------------
@@ -215,15 +220,16 @@ static int HashQueue_isEmpty(ThreadQueue* queue) {
 /*
     - Frees the entries in a table provided they are marked as occupied
 */
-static void HashQueue_free(HashQueue *this) {
+static void HashQueue_free(ThreadQueue *queue) {
+    HashQueue *hashqueue = (HashQueue*) queue;
     // Free each entry in the hash table
-    for (int i = 0; i < this -> capacity; ++i) {
-        if (this -> table[i] != NULL) {
-            free(this -> table[i]);
+    for (int i = 0; i < hashqueue -> capacity; ++i) {
+        if (hashqueue -> table[i] != NULL) {
+            free(hashqueue -> table[i]);
         }
     }
-    free(this -> table);
-    free(this);
+    free(hashqueue -> table);
+    free(hashqueue);
 }
 
 
@@ -231,7 +237,7 @@ static void HashQueue_free(HashQueue *this) {
     Returns 0 if any malloc failed, 1 otherwise.
 */
 int init_HashQueue(HashQueue *this) {
-    this -> size = 0;
+    this -> _size = 0;
     this -> capacity = INITIAL_CAPACITY;
     this -> load_factor = 0.0;
     this -> head = NULL;
@@ -245,12 +251,16 @@ int init_HashQueue(HashQueue *this) {
         this -> table[i] = NULL;        // explicitly set Entry pointers to null   
     }
 
-    this -> freeQueue = HashQueue_free;
+    
     this -> dequeue = HashQueue_dequeue;
-    this -> enqueue = HashQueue_enqueue;
     this -> contains = HashQueue_contains;
-    this -> removeByID = HashQueue_removeByID;
+    this -> enqueue = HashQueue_enqueue;
     this -> isEmpty = HashQueue_isEmpty;
+    this -> removeByID = HashQueue_removeByID;
+    this -> iterator = new_Iterator;
+    this -> size = HashQueue_size;
+    this -> freeQueue = HashQueue_free;
+    
     return 1;
 }
 
@@ -286,9 +296,9 @@ QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
         return result;
     }
 
-    new_queue -> size = old_queue -> size;
+    new_queue -> _size = old_queue -> _size;
     new_queue -> capacity = (old_queue -> capacity) * 2;
-    new_queue -> load_factor = (double) new_queue -> size / new_queue -> capacity;
+    new_queue -> load_factor = (double) new_queue -> _size / new_queue -> capacity;
 
     new_queue -> head = old_queue -> head;
     new_queue -> tail = old_queue -> tail;
@@ -305,12 +315,14 @@ QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
         new_queue -> table[i] = NULL;
     }
 
-    new_queue -> freeQueue = HashQueue_free;
     new_queue -> dequeue = HashQueue_dequeue;
-    new_queue -> enqueue = HashQueue_enqueue;
     new_queue -> contains = HashQueue_contains;
-    new_queue -> removeByID = HashQueue_removeByID;
+    new_queue -> enqueue = HashQueue_enqueue;
     new_queue -> isEmpty = HashQueue_isEmpty;
+    new_queue -> removeByID = HashQueue_removeByID;
+    new_queue -> iterator = new_Iterator;
+    new_queue -> size = HashQueue_size;
+    new_queue -> freeQueue = HashQueue_free;
 
     // Rehashing Procedure
     const u16 table_mask = (new_queue -> capacity) - 1;
@@ -330,9 +342,34 @@ QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
     }
     
 
-    old_queue -> freeQueue(old_queue);
+    old_queue -> freeQueue((ThreadQueue*) old_queue);
     QueueResultPair result;
     result.queue = (ThreadQueue*) new_queue;
     result.result = 1;
     return result;
+}
+
+ // Iterator functions
+ static thread* Iterator_next(Iterator *iterator) {
+    Entry *current = iterator -> currentEntry;
+    iterator -> currentEntry = iterator -> currentEntry -> next;
+    return current -> t;
+}
+
+static int Iterator_hasNext(Iterator *iterator) {
+    return iterator -> currentEntry != NULL;  
+}
+
+Iterator* new_Iterator(ThreadQueue* queue) {
+    HashQueue *hashqueue = (HashQueue*) queue;
+    Iterator *iterator = malloc(sizeof(Iterator));
+    if (iterator == NULL) {
+        return NULL;
+    }
+
+    iterator -> hasNext = Iterator_hasNext;
+    iterator -> next = Iterator_next;
+    iterator -> currentEntry = hashqueue -> head;
+
+    return iterator;
 }
