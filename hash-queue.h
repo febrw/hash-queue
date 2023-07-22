@@ -52,6 +52,7 @@ struct ThreadQueue {
     QueueResultPair (*enqueue) (thread*, ThreadQueue*);    // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
     int (*isEmpty) (ThreadQueue*);                         // success/failure return value
     thread* (*removeByID) (u16, ThreadQueue*);             // Inputs: ID, queue. Output: removed element
+    thread* (*getByID) (u16, ThreadQueue*);                // Returns a reference to the thread, but does not remove
     Iterator* (*iterator)(ThreadQueue*);                   // Constructs an iterator over the ThreadQueue
     int (*size) (ThreadQueue*);                            // Returns the number of elements in the ThreadQueue
     void (*freeQueue) (ThreadQueue*);
@@ -65,6 +66,7 @@ struct HashQueue {
     QueueResultPair (*enqueue) (thread*, ThreadQueue*);    // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
     int (*isEmpty) (ThreadQueue*);                         // success/failure return value
     thread* (*removeByID) (u16, ThreadQueue*);             // Inputs: ID, queue. Output: removed element
+    thread* (*getByID) (u16, ThreadQueue*);                // Returns a reference to the thread, but does not remove
     Iterator* (*iterator)(ThreadQueue*);
     int (*size) (ThreadQueue*);                            // Returns the number of elements in the HashQueue
     void (*freeQueue) (ThreadQueue*);
