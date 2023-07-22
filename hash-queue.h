@@ -79,11 +79,9 @@ struct HashQueue {
       
 };
 
-
 HashQueue *new_HashQueue();
 int init_HashQueue(HashQueue*);
 QueueResultPair HashQueue_rehash(HashQueue*); 
 
-Iterator *new_Iterator(ThreadQueue*);
 
 #endif /* HASH_QUEUE_H */
