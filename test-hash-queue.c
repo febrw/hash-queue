@@ -1447,7 +1447,7 @@ static void iteratorHasNextEmptyFalse(void) {
 
 static void iteratorHasNextDoesNotModify(void) {
     QueueResultPair result = threadqueue -> enqueue(threads[0], threadqueue);
-    Iterator *iterator = threadqueue -> iterator(threadqueue);;
+    Iterator *iterator = threadqueue -> iterator(threadqueue);
 
     assert(iterator -> hasNext(iterator) != 0);
     assert(iterator -> hasNext(iterator) != 0);
@@ -1477,7 +1477,7 @@ static void iteratorExampleUsage(void) {
         threadqueue = result.queue;
     }
 
-    Iterator *it = threadqueue -> iterator(threadqueue);;
+    Iterator *it = threadqueue -> iterator(threadqueue);
     thread *current_thread;
 
     int idx = 0;

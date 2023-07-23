@@ -30,9 +30,9 @@ struct Entry {
 struct Iterator {
     int (*hasNext) (Iterator*);
     thread* (*next) (Iterator*);
+    // specific
     Entry *currentEntry;
 };
-
 
 /*
     Enqueue may require rehashing, changing the queue's pointer
