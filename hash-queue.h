@@ -5,6 +5,11 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned char u8;
 
+#define FNV_32_PRIME ((u32) 0x01000193)
+#define FNV_32_OFFSET_BASIS ((u32) 0x811c9dc5)
+#define FIRST_OCTET_MASK (0xff00)
+#define SECOND_OCTET_MASK (0xff)
+
 #define INITIAL_CAPACITY 128
 #define REHASH_THRESHOLD 0.5
 
@@ -84,5 +89,9 @@ HashQueue *new_HashQueue();
 int init_HashQueue(HashQueue*);
 QueueResultPair HashQueue_rehash(HashQueue*); 
 
+// Hash Functions
+
+u16 IDHash(u16 data);
+u16 FNV1AHash(u16 data);
 
 #endif /* HASH_QUEUE_H */

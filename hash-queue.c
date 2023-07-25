@@ -3,6 +3,25 @@
 
 #include "hash-queue.h"
 
+//------------------------------ Hash Functions ---------------------------------------------
+
+u16 IDHash(u16 data) {
+    return data;
+}
+
+u16 FNV1AHash(u16 data) {
+    u32 hash = FNV_32_OFFSET_BASIS;
+    hash |= (FIRST_OCTET_MASK) & data;      // XOR with first octet
+    hash *= FNV_32_PRIME;                   // Multiply by FNV32 Prime
+
+    hash |= (SECOND_OCTET_MASK) & data;     // XOR with second octet
+    hash *= FNV_32_PRIME;                   // Multiply by FNV32 prime
+
+    return (u16) hash;
+}
+
+
+
 
 //------------------------------ HashQueue ADT IMPLEMENTATIONS ------------------------------
 
