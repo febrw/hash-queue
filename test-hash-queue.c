@@ -50,6 +50,7 @@ static void initOK(void) {
 static void setup() {
     threadqueue = (ThreadQueue*) new_HashQueue();
     hashqueue = (HashQueue*) threadqueue;
+    hashqueue -> getHash = IDHash;
 }
 
 static void teardown() {

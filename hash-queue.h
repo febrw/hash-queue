@@ -7,8 +7,8 @@ typedef unsigned char u8;
 
 #define FNV_32_PRIME ((u32) 0x01000193)
 #define FNV_32_OFFSET_BASIS ((u32) 0x811c9dc5)
-#define FIRST_OCTET_MASK (0xff00)
-#define SECOND_OCTET_MASK (0xff)
+#define FIRST_OCTET_MASK (0xff)
+#define SECOND_OCTET_MASK (0xff00)
 
 #define INITIAL_CAPACITY 128
 #define REHASH_THRESHOLD 0.5
@@ -76,6 +76,10 @@ struct HashQueue {
     void (*freeQueue) (ThreadQueue*);
 
     // Hash Queue only
+    u16 (*getHash) (u16);
+    // DEBUG ONLY
+    int (*getTableIndexByID) (u16, ThreadQueue*);
+    Entry* (*getEntryByID) (u16, ThreadQueue*);
     int _size;
     int capacity;                                          // must be a power of 2
     double load_factor;                                    // [0,1]

@@ -11,17 +11,14 @@ u16 IDHash(u16 data) {
 
 u16 FNV1AHash(u16 data) {
     u32 hash = FNV_32_OFFSET_BASIS;
-    hash |= (FIRST_OCTET_MASK) & data;      // XOR with first octet
+    hash ^= (FIRST_OCTET_MASK) & data;      // XOR with first octet
     hash *= FNV_32_PRIME;                   // Multiply by FNV32 Prime
 
-    hash |= (SECOND_OCTET_MASK) & data;     // XOR with second octet
+    hash ^= (SECOND_OCTET_MASK) & data;     // XOR with second octet
     hash *= FNV_32_PRIME;                   // Multiply by FNV32 prime
 
-    return (u16) hash;
+    return (hash >> 16) ^ (hash & 0xffff); // XOR Fold the hash before returning
 }
-
-
-
 
 //------------------------------ HashQueue ADT IMPLEMENTATIONS ------------------------------
 
@@ -33,7 +30,7 @@ static QueueResultPair HashQueue_enqueue(Thread *t, ThreadQueue *queue) {
     HashQueue *hashqueue = (HashQueue*) queue;
     const u16 thread_id = t -> id;
     const u16 table_mask = (hashqueue -> capacity) - 1;
-    u16 table_index = thread_id & table_mask;
+    u16 table_index = hashqueue -> getHash(thread_id) & table_mask;
 
     while (hashqueue -> table[table_index] != NULL) // iterate while positions unavailable
     {
@@ -87,13 +84,6 @@ static QueueResultPair HashQueue_enqueue(Thread *t, ThreadQueue *queue) {
         - Check each entry's ideal index.
         - If it is less than the index we emptied, move this entry into the empty index
         - continue until we find an empty slot
-
-    BAD BAD:
-        - fix if condition:
-        - we want to skip over:
-            - 1: entries in place, i.e. their ideal index is at the current inspect index
-            - 2: entries who's ideal index is lower than the empty index
-
 */
 
 static void HashQueue_tableRepair(u16 empty_index, HashQueue *hashqueue) {
@@ -104,7 +94,7 @@ static void HashQueue_tableRepair(u16 empty_index, HashQueue *hashqueue) {
 
     while (hashqueue -> table[inspect_index] != NULL) {
         thread_id = hashqueue -> table[inspect_index] -> t -> id;
-        ideal_index = thread_id & table_mask;
+        ideal_index = hashqueue -> getHash(thread_id) & table_mask;
 
         /* 
             current entry is 'out of place'
@@ -150,7 +140,7 @@ static Thread *HashQueue_dequeue(ThreadQueue *queue) {
         hashqueue -> tail = NULL;
         hashqueue -> head = NULL;
     } else {                            // there is at least one other entry
-        Entry * next = entry -> next;
+        Entry *next = entry -> next;
         next -> prev = NULL;
         hashqueue -> head = next;
     }
@@ -167,7 +157,7 @@ static Thread *HashQueue_dequeue(ThreadQueue *queue) {
 static Thread *HashQueue_removeByID(u16 thread_id, ThreadQueue *queue) {
     HashQueue *hashqueue = (HashQueue*) queue;
     const u16 table_mask = (hashqueue -> capacity) - 1;
-    u16 inspect_index = thread_id & table_mask;
+    u16 inspect_index = hashqueue -> getHash(thread_id) & table_mask;
 
     while (hashqueue -> table[inspect_index] != NULL)
     {
@@ -210,7 +200,7 @@ static Thread *HashQueue_removeByID(u16 thread_id, ThreadQueue *queue) {
 static Thread *HashQueue_getByID(u16 thread_id, ThreadQueue* queue) {
     HashQueue* hashqueue = (HashQueue*) queue;
     const u16 table_mask = (hashqueue -> capacity) - 1;
-    u16 table_index = thread_id & table_mask;
+    u16 table_index = hashqueue -> getHash(thread_id) & table_mask;
 
     while (hashqueue -> table[table_index] != NULL)
     {
@@ -236,6 +226,40 @@ static int HashQueue_isEmpty(ThreadQueue* queue) {
 static int HashQueue_size(ThreadQueue* queue) {
     HashQueue *hashqueue = (HashQueue*) queue;
     return hashqueue -> _size;
+}
+
+static int HashQueue_getTableIndexByID(u16 thread_id, ThreadQueue* queue) {
+    HashQueue* hashqueue = (HashQueue*) queue;
+    const u16 table_mask = (hashqueue -> capacity) - 1;
+    u16 table_index = hashqueue -> getHash(thread_id) & table_mask;
+
+    while (hashqueue -> table[table_index] != NULL)
+    {
+        Entry* curr = hashqueue -> table[table_index];
+        if (curr -> t -> id == thread_id) {
+            return (int) table_index;
+        } else {
+            table_index = (table_index + 1) & table_mask;
+        }
+    }
+    return -1;
+}
+
+static Entry *HashQueue_getEntryByID(u16 thread_id, ThreadQueue* queue) {
+    HashQueue* hashqueue = (HashQueue*) queue;
+    const u16 table_mask = (hashqueue -> capacity) - 1;
+    u16 table_index = hashqueue -> getHash(thread_id) & table_mask;
+
+    while (hashqueue -> table[table_index] != NULL)
+    {
+        Entry* curr = hashqueue -> table[table_index];
+        if (curr -> t -> id == thread_id) {
+            return curr;
+        } else {
+            table_index = (table_index + 1) & table_mask;
+        }
+    }
+    return NULL;
 }
 
 //----------------------------------- CONSTRUCTORS + DESTRUCTOR -----------------------------------
@@ -309,6 +333,9 @@ int init_HashQueue(HashQueue *this) {
     this -> iterator = new_Iterator;
     this -> size = HashQueue_size;
     this -> freeQueue = HashQueue_free;
+    this -> getHash = FNV1AHash;
+    this -> getTableIndexByID = HashQueue_getTableIndexByID;
+    this -> getEntryByID = HashQueue_getEntryByID;
     
     return 1;
 }
@@ -373,6 +400,9 @@ QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
     new_queue -> iterator = new_Iterator;
     new_queue -> size = HashQueue_size;
     new_queue -> freeQueue = HashQueue_free;
+    new_queue -> getHash = old_queue -> getHash;
+    new_queue -> getTableIndexByID = HashQueue_getTableIndexByID;
+    new_queue -> getEntryByID = HashQueue_getEntryByID;
 
     // Rehashing Procedure
     const u16 table_mask = (new_queue -> capacity) - 1;
@@ -381,7 +411,7 @@ QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
         if (old_queue -> table[i] != NULL) {
             Entry * entry = old_queue -> table[i];
 
-            table_index = (entry -> t -> id) & table_mask;
+            table_index = new_queue -> getHash(entry -> t -> id) & table_mask;
             while (new_queue -> table[table_index] != NULL) {
                 table_index = (table_index + 1) & table_mask;
             }
