@@ -235,7 +235,7 @@ static int HashQueue_getTableIndexByID(u16 thread_id, ThreadQueue* queue) {
 
     while (hashqueue -> table[table_index] != NULL)
     {
-        Entry* curr = hashqueue -> table[table_index];
+        Entry *curr = hashqueue -> table[table_index];
         if (curr -> t -> id == thread_id) {
             return (int) table_index;
         } else {
@@ -409,17 +409,18 @@ QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
     u16 table_index;
     for (int i = 0; i < old_queue -> capacity; ++i) {
         if (old_queue -> table[i] != NULL) {
-            Entry * entry = old_queue -> table[i];
+            Entry *entry = old_queue -> table[i];
 
             table_index = new_queue -> getHash(entry -> t -> id) & table_mask;
             while (new_queue -> table[table_index] != NULL) {
                 table_index = (table_index + 1) & table_mask;
             }
             new_queue -> table[table_index] = entry;
-
+            entry -> table_index = table_index;
             old_queue -> table[i] = NULL; // set to zero so entries will not be freed
         }
     }
+
     
 
     old_queue -> freeQueue((ThreadQueue*) old_queue);

@@ -83,7 +83,9 @@ static void t1(void) {
         u16 actual_loc = hashqueue -> getTableIndexByID(i, threadqueue);
         u16 entry_belief = hashqueue -> getEntryByID(i, threadqueue) -> table_index;
 
-        if (ideal_loc != actual_loc) {
+        
+
+        if (entry_belief != actual_loc) {
             printf("i: %d, ideal: %u, actual: %u, entry_belief: %u\n\n", i, ideal_loc, actual_loc, entry_belief);
             
             for (int j = 0; j <= i; ++j) {
@@ -102,52 +104,199 @@ static void t1(void) {
     -   stores the table indices of each entry
     -   dequeue all the stuff
     -   check table entries
-
 */
 static void t2(void) {
-    u16 indices[256];
+    const int test_size = 128;
+    int indices[test_size];     // for each thread, stores its table index
+
+    // Do enqueues
     QueueResultPair result;
-    for (int i = 0; i < 256; ++i) {
+    for (int i = 0; i < test_size; ++i) {
         result = threadqueue -> enqueue(threads[i], threadqueue);
         threadqueue = result.queue;
         hashqueue = (HashQueue*) threadqueue;
+    }
 
+    // store table indices
+    for (int i = 0; i < test_size; ++i) {
         indices[i] = hashqueue -> getTableIndexByID(i, threadqueue);
-        if(indices[i] == 372) {
-            printf("thread causing issue: %u\n\n", i);
-        }
+        //printf("t_id: %d, idx: %d\n", i, indices[i]);
     }
 
-    Thread *dqd_threads[256];
-    for (int i = 0; i < 256; ++i) {
+    
+
+    Thread *dqd_threads[test_size];
+    for (int i = 0; i < test_size; ++i) {
         dqd_threads[i] = threadqueue -> dequeue(threadqueue);
+        
     }
 
-    for (int i = 0; i < 256; ++i) {
+    //printf("\n\n\n\n\n\n\n");
+    
+
+
+
+  
+    /*
+    for (int i = 0; i < test_size; ++i) {
         u16 idx = indices[i];
         if (hashqueue -> table[idx] != NULL) {
             printf("Unfreed index: %u\n", idx);
         }
     }
+    */
 
 
 
+    //printf("here\n");
+
+    /*
+    int c = 0;
+    for (int i = 0; i < hashqueue -> capacity; ++i) {
+        if (hashqueue -> table[i] != NULL) {
+            printf("bad idx: %d\n", i);
+            ++c;
+        }
+    }
+    printf("\n\nbad counts: %d\n", c);
     
+    */
+
 }
+
+static void t3(void) {
+    enqueueAll();
+
+    int c = 0;
+    for (int i = 0; i < hashqueue -> capacity; ++i) {
+        if (hashqueue -> table[i] != NULL) {
+            ++c;
+        }
+    }
+    
+    printf("Occupied counts:  %d\n", c);
+
+    for (int i = 0; i < c; ++i) {
+        threadqueue -> dequeue(threadqueue);
+    }
+
+    int d = 0;
+    for (int i = 0; i < hashqueue -> capacity; ++i) {
+        if (hashqueue -> table[i] != NULL) {
+            ++d;
+        }
+    }
+
+    printf("Occupied counts after deq all:  %d\n", d);
+}
+
+// correct threads being dequeued
+static void t4(void) {
+    enqueueAll();
+
+    Thread *dqd;
+    for (int i = 0; i < 65535; ++i) {
+        dqd = threadqueue -> dequeue(threadqueue);
+        if (dqd -> id != i) {
+            printf("t_id: %d\n", i);
+            return;
+        }
+    }
+}
+
+static void t5(void) {
+    enqueueAll();
+
+    Thread *dqd;
+    int table_index;
+    int bad_counts = 0;
+    for (int i = 0; i < 65535; ++i) {
+        table_index = hashqueue -> getTableIndexByID(i, threadqueue);
+        dqd = threadqueue -> dequeue(threadqueue);
+        assert(i == dqd -> id);
+        if (hashqueue -> table[table_index] != NULL) {
+            printf("Index not set to null: %d, t_id: %u\n", table_index, dqd -> id);
+            ++bad_counts;
+            return;
+        }
+    }
+    printf("\n\n\n\n bad counts: %d\n", bad_counts);
+}
+
+static void t6(void) {
+    enqueueAll();
+
+    int occupied_counts1 = 0;
+    for (int i = 0; i < hashqueue -> capacity; ++i) {
+        if (hashqueue -> table[i] != NULL) {
+            ++occupied_counts1;
+        }
+    }
+    printf("Occupied counts after enq all: %d\n", occupied_counts1);
+
+
+    int table_idx = hashqueue -> getTableIndexByID(0, threadqueue);
+    //assert(table_idx == 34491);
+
+    Thread *dqd = threadqueue -> dequeue(threadqueue);
+
+    int occupied_counts2 = 0;
+    for (int i = 0; i < hashqueue -> capacity; ++i) {
+        if (hashqueue -> table[i] != NULL) {
+            ++occupied_counts2;
+        }
+    }
+    printf("Occupied counts after single dq: %d\n", occupied_counts2);
+
+    if (hashqueue -> table[table_idx] != NULL) {
+        printf("Dq did not set 34491 to null\n");
+    }
+    // So what did it set to null?
+}
+
+static void t7(void) {
+    enqueueAll();
+
+    int mismatch_count = 0;
+
+    printf("ideal loc for t_id 0: %u\n", FNV1AHash(0) & (hashqueue -> capacity -1));
+
+    for (int i = 0; i < 65535; ++i) {
+        u16 table_index = (u16) hashqueue -> getTableIndexByID(i, threadqueue);
+        u16 believed_index = hashqueue -> getEntryByID(i, threadqueue) -> table_index;
+        //assert(believed_index ==  table_index);
+        if (table_index != believed_index) {
+            printf("ID: %d, Believed: %u, Table: %u\n", i, believed_index, table_index);
+            ++mismatch_count;
+            return;
+        }
+    }
+
+    printf("mismatch count: %d\n", mismatch_count);
+}
+
+
 
 /*
     Problem:
     - after dequeueing all, freeing memory that was not allocated
-    - implies table entries not set to null are erroneously being freed
+    - table entries not set to null are erroneously being freed?
 */
 
 int main() {
 
     setup();
     //t1();
-    t2();
+    //t2();
+    //t3();
+    //t4();
+    //t5();
+    //t6();
+    //t7();
+    //enqueueAll();
 
-    /*
+    
+    
     const double enqueue_time = timeFunction(enqueueAll);
     printf("Enqueue all time elapsed (ms): %f\n", enqueue_time);
 
@@ -160,10 +309,10 @@ int main() {
     }
 
     
-    //const double dequeue_time = timeFunction(dequeueAll);
-    //printf("Dequeue all time elapsed (ms): %f\n", dequeue_time);
+    const double dequeue_time = timeFunction(dequeueAll);
+    printf("Dequeue all time elapsed (ms): %f\n", dequeue_time);
 
-    */
+    
 
     /*
     Iterator *iterator = threadqueue -> iterator(threadqueue);
