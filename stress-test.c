@@ -56,6 +56,13 @@ static void dequeueAll(void) {
     }
 }
 
+static void containsAll(void) {
+    int contains;
+    for (int i = 0; i < 65535; ++i) {
+        contains = threadqueue -> contains(0, threadqueue);
+    }
+}
+
 static double timeFunction(void (*testFunction) (void)) {
     clock_t begin = clock();
     testFunction();
@@ -295,8 +302,7 @@ int main() {
     //t7();
     //enqueueAll();
 
-    
-    
+    /*
     const double enqueue_time = timeFunction(enqueueAll);
     printf("Enqueue all time elapsed (ms): %f\n", enqueue_time);
 
@@ -308,9 +314,25 @@ int main() {
         assert(threadqueue -> contains(i, threadqueue) == 1);
     }
 
+    */
+
+    const double enqueue_time = timeFunction(enqueueAll);
+    printf("Enqueue all time elapsed (ms): %f\n", enqueue_time);
     
     const double dequeue_time = timeFunction(dequeueAll);
     printf("Dequeue all time elapsed (ms): %f\n", dequeue_time);
+
+    enqueueAll();
+    const double remove_time = timeFunction(removeByIDAll);
+    printf("remove all time elapsed (ms): %f\n", remove_time);
+
+    assert(threadqueue -> size(threadqueue) == 0);
+
+    enqueueAll();
+    const double contains_time = timeFunction(containsAll);
+    printf("contains all time elapsed (ms): %f\n", contains_time);
+
+
 
     
 

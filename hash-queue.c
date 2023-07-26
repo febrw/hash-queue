@@ -404,21 +404,23 @@ QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
     new_queue -> getTableIndexByID = HashQueue_getTableIndexByID;
     new_queue -> getEntryByID = HashQueue_getEntryByID;
 
-    // Rehashing Procedure
-    const u16 table_mask = (new_queue -> capacity) - 1;
-    u16 table_index;
-    for (int i = 0; i < old_queue -> capacity; ++i) {
-        if (old_queue -> table[i] != NULL) {
-            Entry *entry = old_queue -> table[i];
 
-            table_index = new_queue -> getHash(entry -> t -> id) & table_mask;
-            while (new_queue -> table[table_index] != NULL) {
-                table_index = (table_index + 1) & table_mask;
-            }
-            new_queue -> table[table_index] = entry;
-            entry -> table_index = table_index;
-            old_queue -> table[i] = NULL; // set to zero so entries will not be freed
+    // Rehashing procedure
+    const u16 table_mask = (new_queue -> capacity) - 1;
+    u16 new_table_index;
+    u16 old_table_index;
+    Entry *curr = old_queue -> head;
+    
+    while (curr != NULL) {
+        old_table_index = curr -> table_index;
+        new_table_index = new_queue -> getHash(curr -> t -> id) & table_mask;
+        while (new_queue -> table[new_table_index] != NULL) {
+                new_table_index = (new_table_index + 1) & table_mask;
         }
+        new_queue -> table[new_table_index] = curr;
+        old_queue -> table[old_table_index] = NULL;
+        curr -> table_index = new_table_index;
+        curr = curr -> next;
     }
 
     

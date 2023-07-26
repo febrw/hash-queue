@@ -77,7 +77,7 @@ struct HashQueue {
 
     // Hash Queue only
     u16 (*getHash) (u16);
-    // DEBUG ONLY
+    // DEBUG HELPER FUNCTIONS
     int (*getTableIndexByID) (u16, ThreadQueue*);
     Entry* (*getEntryByID) (u16, ThreadQueue*);
     int _size;
