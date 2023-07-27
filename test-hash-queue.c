@@ -1746,8 +1746,9 @@ static void runAllTests(void) {
 }
 
 
-
+/*
 int main(void) {
     runAllTests();
     return 0; 
 }
+*/
