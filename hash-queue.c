@@ -266,9 +266,9 @@ static Entry *HashQueue_getEntryByID(u16 thread_id, ThreadQueue* queue) {
 
  // Iterator functions
  static Thread* Iterator_next(Iterator *iterator) {
-    Entry *current = iterator -> currentEntry;
+    Entry *curr = iterator -> currentEntry;
     iterator -> currentEntry = iterator -> currentEntry -> next;
-    return current -> t;
+    return curr -> t;
 }
 
 static int Iterator_hasNext(Iterator *iterator) {

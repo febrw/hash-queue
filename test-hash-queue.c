@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "hash-queue.h"
+#include "test-hash-queue.h"
 
 static const int test_count = 68;
 static int tests_passed = 0;
@@ -1644,7 +1645,7 @@ static void iteratorExampleUsage(void) {
     ++tests_passed;
 }
 
-static void runAllTests(void) {
+void runAllTests(void) {
     // Setup global test variables
     initialiseBasicThreads();
     initialiseOverlappingThreads();
@@ -1746,9 +1747,8 @@ static void runAllTests(void) {
 }
 
 
-/*
+
 int main(void) {
     runAllTests();
     return 0; 
 }
-*/
