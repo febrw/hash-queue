@@ -1644,9 +1644,7 @@ static void iteratorExampleUsage(void) {
     ++tests_passed;
 }
 
-
-
-int main(void) {
+static void runAllTests(void) {
     // Setup global test variables
     initialiseBasicThreads();
     initialiseOverlappingThreads();
@@ -1745,5 +1743,11 @@ int main(void) {
     freeThreads();
     
     printf("Passed %u/%u tests.\n", tests_passed, test_count);
+}
+
+
+
+int main(void) {
+    runAllTests();
     return 0; 
 }
