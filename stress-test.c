@@ -60,6 +60,9 @@ static void containsAll(void) {
     int contains;
     for (int i = 0; i < 65535; ++i) {
         contains = threadqueue -> contains(0, threadqueue);
+        if (contains == 0) {
+            printf("fuck: %d\n", i);
+        }
     }
 }
 
@@ -68,6 +71,21 @@ static double timeFunction(void (*testFunction) (void)) {
     testFunction();
     clock_t end = clock();
     return (double) (end - begin) * 1000 / CLOCKS_PER_SEC;
+}
+
+static void enqueueHalf(void) {
+    QueueResultPair result;
+    for (int i = 0; i < 65535; i += 2) {
+        result = threadqueue -> enqueue(threads[i], threadqueue);
+    }
+}
+
+static void containsHalf() {
+    for (int i = 0; i < 65535; i += 2) {
+        if (threadqueue -> contains(0, threadqueue) == 0) {
+            printf("missing!: %d\n", i);
+        }
+    }
 }
 
 
@@ -331,6 +349,14 @@ int main() {
     enqueueAll();
     const double contains_time = timeFunction(containsAll);
     printf("contains all time elapsed (ms): %f\n", contains_time);
+
+    dequeueAll();
+
+    const double enqueue_time2 = timeFunction(enqueueHalf);
+    printf("Enqueue half time elapsed (ms): %f\n", enqueue_time2);
+    const double contains_time2 = timeFunction(containsHalf);
+    printf("contains half time elapsed (ms): %f\n", contains_time2);
+    
 
 
 
