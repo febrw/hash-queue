@@ -49,6 +49,13 @@ static void removeByIDAll(void) {
     }
 }
 
+static void removeByIDReversedAll(void) {
+    Thread *removed;
+    for (int i = 65534; i >= 0; --i) {
+        removed = threadqueue -> removeByID(i, threadqueue);
+    }
+}
+
 static void dequeueAll(void) {
     Thread *dequeued;
     for (int i = 0; i < 65535; ++i) {
@@ -59,7 +66,14 @@ static void dequeueAll(void) {
 static void containsAll(void) {
     int contains;
     for (int i = 0; i < 65535; ++i) {
-        contains = threadqueue -> contains(0, threadqueue);
+        contains = threadqueue -> contains(i, threadqueue);
+    }
+}
+
+static void containsAllReversed(void) {
+    int contains;
+    for (int i = 65534; i >= 0; --i) {
+        contains = threadqueue -> contains(i, threadqueue);
     }
 }
 
@@ -319,18 +333,26 @@ int main() {
     const double enqueue_time = timeFunction(enqueueAll);
     printf("Enqueue all time elapsed (ms): %f\n", enqueue_time);
     
-    const double dequeue_time = timeFunction(dequeueAll);
-    printf("Dequeue all time elapsed (ms): %f\n", dequeue_time);
+    //const double dequeue_time = timeFunction(dequeueAll);
+    //printf("Dequeue all time elapsed (ms): %f\n", dequeue_time);
 
-    enqueueAll();
+    //enqueueAll();
     const double remove_time = timeFunction(removeByIDAll);
     printf("remove all time elapsed (ms): %f\n", remove_time);
+
+
+    enqueueAll();
+    const double remove_reverse = timeFunction(removeByIDReversedAll);
+    printf("remove all by reverse order time elapsed (ms): %f\n", remove_reverse);
 
     assert(threadqueue -> size(threadqueue) == 0);
 
     enqueueAll();
     const double contains_time = timeFunction(containsAll);
     printf("contains all time elapsed (ms): %f\n", contains_time);
+
+    const double contains_reversed = timeFunction(containsAllReversed);
+    printf("contains all reversed time elapsed (ms): %f\n", contains_reversed);
 
 
 

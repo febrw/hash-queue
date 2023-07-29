@@ -1,6 +1,8 @@
 #ifndef HASH_QUEUE_H
 #define HASH_QUEUE_H
 
+#include "list.h"
+
 typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned char u8;
@@ -23,6 +25,7 @@ typedef struct Iterator Iterator;
 
 struct Thread {
     u16 id;
+    struct list_head thread_list;
 };
 
 struct Entry {
