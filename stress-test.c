@@ -6,16 +6,18 @@
 
 #include "hash-queue.h"
 
+#define MAX_THREADS 65536
+
 static ThreadQueue *threadqueue;
 static HashQueue *hashqueue;
-static Thread *threads[65535];
+static Thread *threads[MAX_THREADS];
 
 static void setup() {
     threadqueue = (ThreadQueue*) new_HashQueue();
     hashqueue = (HashQueue*) threadqueue;
     //hashqueue -> getHash = IDHash;
 
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         threads[i] = malloc(sizeof(Thread));
         if (threads[i] == NULL) {
             printf("malloc failed");
@@ -28,14 +30,14 @@ static void setup() {
 
 static void wrapUp() {
     threadqueue -> freeQueue(threadqueue);
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         free(threads[i]);
     }
 }
 
 static void enqueueAll(void) {
     QueueResultPair result;
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         result = threadqueue -> enqueue(threads[i], threadqueue);
         threadqueue = result.queue;
     }
@@ -44,35 +46,35 @@ static void enqueueAll(void) {
 
 static void removeByIDAll(void) {
     Thread *removed;
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         removed = threadqueue -> removeByID(i, threadqueue);
     }
 }
 
 static void removeByIDReversedAll(void) {
     Thread *removed;
-    for (int i = 65534; i >= 0; --i) {
+    for (int i = MAX_THREADS - 1; i >= 0; --i) {
         removed = threadqueue -> removeByID(i, threadqueue);
     }
 }
 
 static void dequeueAll(void) {
     Thread *dequeued;
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         dequeued = threadqueue -> dequeue(threadqueue);
     }
 }
 
 static void containsAll(void) {
     int contains;
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         contains = threadqueue -> contains(i, threadqueue);
     }
 }
 
 static void containsAllReversed(void) {
     int contains;
-    for (int i = 65534; i >= 0; --i) {
+    for (int i = MAX_THREADS - 1; i >= 0; --i) {
         contains = threadqueue -> contains(i, threadqueue);
     }
 }
@@ -95,7 +97,7 @@ static double timeFunction(void (*testFunction) (void)) {
 */
 static void t1(void) {
     QueueResultPair result;
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         result = threadqueue -> enqueue(threads[i], threadqueue);
         threadqueue = result.queue;
         hashqueue = (HashQueue*) threadqueue;
@@ -216,7 +218,7 @@ static void t4(void) {
     enqueueAll();
 
     Thread *dqd;
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         dqd = threadqueue -> dequeue(threadqueue);
         if (dqd -> id != i) {
             printf("t_id: %d\n", i);
@@ -231,7 +233,7 @@ static void t5(void) {
     Thread *dqd;
     int table_index;
     int bad_counts = 0;
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         table_index = hashqueue -> getTableIndexByID(i, threadqueue);
         dqd = threadqueue -> dequeue(threadqueue);
         assert(i == dqd -> id);
@@ -282,7 +284,7 @@ static void t7(void) {
 
     printf("ideal loc for t_id 0: %u\n", FNV1AHash(0) & (hashqueue -> capacity -1));
 
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         u16 table_index = (u16) hashqueue -> getTableIndexByID(i, threadqueue);
         u16 believed_index = hashqueue -> getEntryByID(i, threadqueue) -> table_index;
         //assert(believed_index ==  table_index);
@@ -324,7 +326,7 @@ int main() {
     printf("capacity: %d\n", hashqueue -> capacity);
     assert(hashqueue -> capacity == 131072);
 
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         assert(threadqueue -> contains(i, threadqueue) == 1);
     }
 

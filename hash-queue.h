@@ -32,7 +32,7 @@ struct Entry {
     Entry *prev;
     Entry *next;
     Thread *t;          // value
-    u16 table_index;    // allows dequeuing without search
+    u32 table_index;    // allows dequeuing without search
 };
 
 struct Iterator {
@@ -79,7 +79,7 @@ struct HashQueue {
     void (*freeQueue) (ThreadQueue*);
 
     // Hash Queue only
-    u16 (*getHash) (u16);
+    u32 (*getHash) (u16);
     // DEBUG HELPER FUNCTIONS
     int (*getTableIndexByID) (u16, ThreadQueue*);
     Entry* (*getEntryByID) (u16, ThreadQueue*);
@@ -98,7 +98,7 @@ QueueResultPair HashQueue_rehash(HashQueue*);
 
 // Hash Functions
 
-u16 IDHash(u16 data);
-u16 FNV1AHash(u16 data);
+u32 IDHash(u16 data);
+u32 FNV1AHash(u16 data);
 
 #endif /* HASH_QUEUE_H */
