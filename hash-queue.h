@@ -14,6 +14,8 @@ typedef unsigned char u8;
 
 #define INITIAL_CAPACITY 128
 #define REHASH_THRESHOLD 0.5
+#define MAX_THREADS 65536
+
 
 typedef struct Thread Thread;
 typedef struct Entry Entry;

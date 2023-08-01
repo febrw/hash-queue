@@ -6,8 +6,6 @@
 
 #include "hash-queue.h"
 
-#define MAX_THREADS 65536
-
 static ThreadQueue *threadqueue;
 static HashQueue *hashqueue;
 static Thread *threads[MAX_THREADS];
