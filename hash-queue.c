@@ -5,11 +5,11 @@
 
 //------------------------------ Hash Functions ---------------------------------------------
 
-u16 IDHash(u16 data) {
+u32 IDHash(u16 data) {
     return data;
 }
 
-u16 FNV1AHash(u16 data) {
+u32 FNV1AHash(u16 data) {
     u32 hash = FNV_32_OFFSET_BASIS;
     hash ^= (FIRST_OCTET_MASK) & data;      // XOR with first octet
     hash *= FNV_32_PRIME;                   // Multiply by FNV32 Prime
@@ -17,7 +17,8 @@ u16 FNV1AHash(u16 data) {
     hash ^= (SECOND_OCTET_MASK) & data;     // XOR with second octet
     hash *= FNV_32_PRIME;                   // Multiply by FNV32 prime
 
-    return (hash >> 16) ^ (hash & 0xffff); // XOR Fold the hash before returning
+    return hash;
+    //return (hash >> 16) ^ (hash & 0xffff); // XOR Fold the hash before returning
 }
 
 //------------------------------ HashQueue ADT IMPLEMENTATIONS ------------------------------
@@ -29,8 +30,8 @@ static QueueResultPair HashQueue_enqueue(Thread *t, ThreadQueue *queue) {
 
     HashQueue *hashqueue = (HashQueue*) queue;
     const u16 thread_id = t -> id;
-    const u16 table_mask = (hashqueue -> capacity) - 1;
-    u16 table_index = hashqueue -> getHash(thread_id) & table_mask;
+    const u32 table_mask = (hashqueue -> capacity) - 1;
+    u32 table_index = hashqueue -> getHash(thread_id) & table_mask;
 
     while (hashqueue -> table[table_index] != NULL) // iterate while positions unavailable
     {
@@ -86,11 +87,11 @@ static QueueResultPair HashQueue_enqueue(Thread *t, ThreadQueue *queue) {
         - continue until we find an empty slot
 */
 
-static void HashQueue_tableRepair(u16 empty_index, HashQueue *hashqueue) {
-    const u16 table_mask = (hashqueue -> capacity) - 1;
-    u16 inspect_index = (empty_index + 1) & table_mask;                     // we inspect the following index
+static void HashQueue_tableRepair(u32 empty_index, HashQueue *hashqueue) {
+    const u32 table_mask = (hashqueue -> capacity) - 1;
+    u32 inspect_index = (empty_index + 1) & table_mask;                     // we inspect the following index
     u16 thread_id;
-    u16 ideal_index;                                                        // will store where an entry would ideally be placed
+    u32 ideal_index;                                                        // will store where an entry would ideally be placed
 
     while (hashqueue -> table[inspect_index] != NULL) {
         thread_id = hashqueue -> table[inspect_index] -> t -> id;
@@ -127,7 +128,7 @@ static Thread *HashQueue_dequeue(ThreadQueue *queue) {
     }
 
     Entry *entry = hashqueue -> head;
-    const u16 table_index = entry -> table_index;   // attained directly without search
+    const u32 table_index = entry -> table_index;   // attained directly without search
 
     // Update hashqueue fields
     hashqueue -> table[table_index] = NULL;
@@ -156,8 +157,8 @@ static Thread *HashQueue_dequeue(ThreadQueue *queue) {
 
 static Thread *HashQueue_removeByID(u16 thread_id, ThreadQueue *queue) {
     HashQueue *hashqueue = (HashQueue*) queue;
-    const u16 table_mask = (hashqueue -> capacity) - 1;
-    u16 inspect_index = hashqueue -> getHash(thread_id) & table_mask;
+    const u32 table_mask = (hashqueue -> capacity) - 1;
+    u32 inspect_index = hashqueue -> getHash(thread_id) & table_mask;
 
     while (hashqueue -> table[inspect_index] != NULL)
     {
@@ -199,8 +200,8 @@ static Thread *HashQueue_removeByID(u16 thread_id, ThreadQueue *queue) {
 
 static Thread *HashQueue_getByID(u16 thread_id, ThreadQueue* queue) {
     HashQueue* hashqueue = (HashQueue*) queue;
-    const u16 table_mask = (hashqueue -> capacity) - 1;
-    u16 table_index = hashqueue -> getHash(thread_id) & table_mask;
+    const u32 table_mask = (hashqueue -> capacity) - 1;
+    u32 table_index = hashqueue -> getHash(thread_id) & table_mask;
 
     while (hashqueue -> table[table_index] != NULL)
     {
@@ -230,8 +231,8 @@ static int HashQueue_size(ThreadQueue* queue) {
 
 static int HashQueue_getTableIndexByID(u16 thread_id, ThreadQueue* queue) {
     HashQueue* hashqueue = (HashQueue*) queue;
-    const u16 table_mask = (hashqueue -> capacity) - 1;
-    u16 table_index = hashqueue -> getHash(thread_id) & table_mask;
+    const u32 table_mask = (hashqueue -> capacity) - 1;
+    u32 table_index = hashqueue -> getHash(thread_id) & table_mask;
 
     while (hashqueue -> table[table_index] != NULL)
     {
@@ -247,8 +248,8 @@ static int HashQueue_getTableIndexByID(u16 thread_id, ThreadQueue* queue) {
 
 static Entry *HashQueue_getEntryByID(u16 thread_id, ThreadQueue* queue) {
     HashQueue* hashqueue = (HashQueue*) queue;
-    const u16 table_mask = (hashqueue -> capacity) - 1;
-    u16 table_index = hashqueue -> getHash(thread_id) & table_mask;
+    const u32 table_mask = (hashqueue -> capacity) - 1;
+    u32 table_index = hashqueue -> getHash(thread_id) & table_mask;
 
     while (hashqueue -> table[table_index] != NULL)
     {
@@ -262,9 +263,7 @@ static Entry *HashQueue_getEntryByID(u16 thread_id, ThreadQueue* queue) {
     return NULL;
 }
 
-//----------------------------------- CONSTRUCTORS + DESTRUCTOR -----------------------------------
-
- // Iterator functions
+//----------------------------------- ITERATOR FUNCTIONS  -----------------------------------------
  static Thread* Iterator_next(Iterator *iterator) {
     Entry *curr = iterator -> currentEntry;
     iterator -> currentEntry = iterator -> currentEntry -> next;
@@ -288,6 +287,8 @@ static Iterator* new_Iterator(ThreadQueue* queue) {
 
     return iterator;
 }
+
+//----------------------------------- CONSTRUCTORS + DESTRUCTOR -----------------------------------
 
 /*
     - Frees the entries in a table provided they are marked as occupied
@@ -406,9 +407,9 @@ QueueResultPair HashQueue_rehash(HashQueue* old_queue) {
 
 
     // Rehashing procedure
-    const u16 table_mask = (new_queue -> capacity) - 1;
-    u16 new_table_index;
-    u16 old_table_index;
+    const u32 table_mask = (new_queue -> capacity) - 1;
+    u32 new_table_index;
+    u32 old_table_index;
     Entry *curr = old_queue -> head;
     
     while (curr != NULL) {

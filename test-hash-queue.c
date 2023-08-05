@@ -117,7 +117,7 @@ static void tableUpdatedFirstInsertion(void) {
     hashqueue = (HashQueue*) threadqueue;
     
     Entry *head = hashqueue -> head;                            // get the head
-    u16 table_index = head -> table_index;                      // find its table index
+    u32 table_index = head -> table_index;                      // find its table index
     assert(hashqueue -> table[table_index] == head);            // verify entry's table index corresponds to table's entry
 
     ++tests_passed;

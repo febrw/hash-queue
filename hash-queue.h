@@ -1,6 +1,8 @@
 #ifndef HASH_QUEUE_H
 #define HASH_QUEUE_H
 
+#include "list.h"
+
 typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned char u8;
@@ -12,6 +14,8 @@ typedef unsigned char u8;
 
 #define INITIAL_CAPACITY 128
 #define REHASH_THRESHOLD 0.5
+#define MAX_THREADS 65536
+
 
 typedef struct Thread Thread;
 typedef struct Entry Entry;
@@ -23,13 +27,14 @@ typedef struct Iterator Iterator;
 
 struct Thread {
     u16 id;
+    struct list_head thread_list;
 };
 
 struct Entry {
     Entry *prev;
     Entry *next;
     Thread *t;          // value
-    u16 table_index;    // allows dequeuing without search
+    u32 table_index;    // allows dequeuing without search
 };
 
 struct Iterator {
@@ -76,7 +81,7 @@ struct HashQueue {
     void (*freeQueue) (ThreadQueue*);
 
     // Hash Queue only
-    u16 (*getHash) (u16);
+    u32 (*getHash) (u16);
     // DEBUG HELPER FUNCTIONS
     int (*getTableIndexByID) (u16, ThreadQueue*);
     Entry* (*getEntryByID) (u16, ThreadQueue*);
@@ -95,7 +100,7 @@ QueueResultPair HashQueue_rehash(HashQueue*);
 
 // Hash Functions
 
-u16 IDHash(u16 data);
-u16 FNV1AHash(u16 data);
+u32 IDHash(u16 data);
+u32 FNV1AHash(u16 data);
 
 #endif /* HASH_QUEUE_H */
