@@ -26,7 +26,7 @@ u32 FNV1AHash(u16 data) {
 /*
     Returns -1 if enqueue failed, 1 if succeeded, 2 if succeeded but rehashing required.
 */
-static QueueResultPair HashQueue_enqueue(Thread *t, ThreadQueue *queue) {
+static QueueResultPair HashQueue_enqueue(struct thread *t, ThreadQueue *queue) {
 
     HashQueue *hashqueue = (HashQueue*) queue;
     const u16 thread_id = t -> id;
@@ -120,7 +120,7 @@ static void HashQueue_tableRepair(u32 empty_index, HashQueue *hashqueue) {
 /*
     - Once a cell is deleted, continue iterating to 'repair' any out of place entries, or until an empty cell is found
 */
-static Thread *HashQueue_dequeue(ThreadQueue *queue) {
+static struct thread *HashQueue_dequeue(ThreadQueue *queue) {
     HashQueue* hashqueue = (HashQueue*) queue;
     
     if (hashqueue -> isEmpty((ThreadQueue*) hashqueue)) {
@@ -148,14 +148,14 @@ static Thread *HashQueue_dequeue(ThreadQueue *queue) {
 
     HashQueue_tableRepair(table_index, hashqueue);
 
-    Thread *th = entry -> t;
+    struct thread *th = entry -> t;
     free(entry);
     return th;
 
 }
 
 
-static Thread *HashQueue_removeByID(u16 thread_id, ThreadQueue *queue) {
+static struct thread *HashQueue_removeByID(u16 thread_id, ThreadQueue *queue) {
     HashQueue *hashqueue = (HashQueue*) queue;
     const u32 table_mask = (hashqueue -> capacity) - 1;
     u32 inspect_index = hashqueue -> getHash(thread_id) & table_mask;
@@ -184,7 +184,7 @@ static Thread *HashQueue_removeByID(u16 thread_id, ThreadQueue *queue) {
             hashqueue -> table[inspect_index] = NULL;       // remove entry from table
             -- hashqueue -> _size;                           // record _size change
             hashqueue -> load_factor = (double) hashqueue -> _size / hashqueue -> capacity;
-            Thread* found = curr -> t;
+            struct thread* found = curr -> t;
 
             HashQueue_tableRepair(inspect_index, hashqueue);
             free(curr);                                     // free Entry
@@ -198,7 +198,7 @@ static Thread *HashQueue_removeByID(u16 thread_id, ThreadQueue *queue) {
 
 }
 
-static Thread *HashQueue_getByID(u16 thread_id, ThreadQueue* queue) {
+static struct thread *HashQueue_getByID(u16 thread_id, ThreadQueue* queue) {
     HashQueue* hashqueue = (HashQueue*) queue;
     const u32 table_mask = (hashqueue -> capacity) - 1;
     u32 table_index = hashqueue -> getHash(thread_id) & table_mask;
@@ -264,7 +264,7 @@ static Entry *HashQueue_getEntryByID(u16 thread_id, ThreadQueue* queue) {
 }
 
 //----------------------------------- ITERATOR FUNCTIONS  -----------------------------------------
- static Thread* Iterator_next(Iterator *iterator) {
+ static struct thread* Iterator_next(Iterator *iterator) {
     Entry *curr = iterator -> currentEntry;
     iterator -> currentEntry = iterator -> currentEntry -> next;
     return curr -> t;

@@ -9,12 +9,12 @@ static int tests_passed = 0;
 
 static ThreadQueue *threadqueue;
 static HashQueue *hashqueue;
-static Thread* threads[256];
-static Thread* overlapping_threads[10];
+static struct thread* threads[256];
+static struct thread* overlapping_threads[10];
 
 static void initialiseOverlappingThreads(void) {
     for (int i = 0; i < 10; ++i) {
-        overlapping_threads[i] = malloc(sizeof(Thread));
+        overlapping_threads[i] = malloc(sizeof(struct thread));
     }
 
     overlapping_threads[0] -> id = 0;       // hashes to 0, placed at 0
@@ -27,7 +27,7 @@ static void initialiseOverlappingThreads(void) {
 
 static void initialiseBasicThreads(void) {
     for (int i = 0; i < 256; ++i) {
-        threads[i] = malloc(sizeof(Thread));
+        threads[i] = malloc(sizeof(struct thread));
         threads[i] -> id = i;
     }
 }
@@ -44,7 +44,7 @@ static void freeThreads(void) {
 
 static void initOK(void) {
     for (int i = 0; i < 256; ++i) {
-        printf("Thread %d: ID: %u.\n", i, threads[i] -> id);
+        printf("struct thread %d: ID: %u.\n", i, threads[i] -> id);
     }
 }
 
@@ -252,7 +252,7 @@ static void dequeueSizesChanged(void) {
 
     double old_load_factor = hashqueue -> load_factor;
     int old_size = hashqueue -> _size;
-    Thread *dequeued = threadqueue -> dequeue(threadqueue);
+    struct thread *dequeued = threadqueue -> dequeue(threadqueue);
     hashqueue = (HashQueue*) threadqueue;
 
     assert(hashqueue -> load_factor != old_load_factor);
@@ -262,7 +262,7 @@ static void dequeueSizesChanged(void) {
 }
 
 static void dequeueEmptyFails(void) {
-    Thread *dequeued = threadqueue -> dequeue(threadqueue);
+    struct thread *dequeued = threadqueue -> dequeue(threadqueue);
     assert(dequeued == NULL);
 
     ++tests_passed;
@@ -275,7 +275,7 @@ static void dequeueCorrectElement(void) {
         threadqueue = result.queue;
     }
 
-    Thread *dequeued = threadqueue -> dequeue(threadqueue);
+    struct thread *dequeued = threadqueue -> dequeue(threadqueue);
 
     assert(dequeued -> id == 0);
     ++tests_passed;
@@ -288,10 +288,10 @@ static void dequeuePointersMended(void) {
         threadqueue = result.queue;
     }
 
-    Thread *dequeued = threadqueue -> dequeue(threadqueue);
+    struct thread *dequeued = threadqueue -> dequeue(threadqueue);
     hashqueue = (HashQueue*) threadqueue;
 
-    assert(hashqueue -> head -> t -> id == 1);                  // new head is Thread 1
+    assert(hashqueue -> head -> t -> id == 1);                  // new head is struct thread 1
     assert(hashqueue -> head -> prev == NULL);                  // new head has no prev element
     assert(hashqueue -> head -> next == hashqueue -> tail);     // new head's next is the tail
 
@@ -305,7 +305,7 @@ static void dequeueTableMended(void) {
         threadqueue = result.queue;
     }
 
-    Thread *dequeued = threadqueue -> dequeue(threadqueue);
+    struct thread *dequeued = threadqueue -> dequeue(threadqueue);
     hashqueue = (HashQueue*) threadqueue;
 
     // Table OK
@@ -328,11 +328,11 @@ static void dequeueTableMended(void) {
     4       1
     5       129
 
-    After dequeueing Thread with id 0, we expect 4 deletion restorations to take place:
-    -   Thread id 128 (slot 1) should move to slot 0 (just vacated by id 0)
-    -   Thread id 256 (slot 2) should move to slot 1 (just vacated by id 128)
-    -   Thread id 1 (slot 4) should move to slot 2 (just vacated by id 256)
-    -   Thread id 129 (slot 5) should move to slot 4 (just vacated by id 1)
+    After dequeueing struct thread with id 0, we expect 4 deletion restorations to take place:
+    -   struct thread id 128 (slot 1) should move to slot 0 (just vacated by id 0)
+    -   struct thread id 256 (slot 2) should move to slot 1 (just vacated by id 128)
+    -   struct thread id 1 (slot 4) should move to slot 2 (just vacated by id 256)
+    -   struct thread id 129 (slot 5) should move to slot 4 (just vacated by id 1)
     -   slot 5 should be empty
 */
 static void dequeueTableRepairTest(void) {
@@ -344,9 +344,9 @@ static void dequeueTableRepairTest(void) {
     }
     hashqueue = (HashQueue*) threadqueue;
 
-    assert(hashqueue -> table[0] -> t -> id == 0);          // slot 0 occupied by Thread 0
+    assert(hashqueue -> table[0] -> t -> id == 0);          // slot 0 occupied by struct thread 0
 
-    Thread *dequeued = threadqueue -> dequeue(threadqueue);
+    struct thread *dequeued = threadqueue -> dequeue(threadqueue);
 
     assert(hashqueue -> table[0] -> t -> id == 128);        // id 128 moved to slot 0
     assert(hashqueue -> table[0] -> table_index == 0);
@@ -385,10 +385,10 @@ static void dequeueLoneElementQPointersAmended(void) {
 }
 
 static void dequeueTableIndicesUpdated(void) {
-    Thread* test_threads[8];
+    struct thread* test_threads[8];
 
     for (int i = 0; i < 8; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] == NULL) {
             printf("mem alloc failed\n");
             assert(1==0);
@@ -408,7 +408,7 @@ static void dequeueTableIndicesUpdated(void) {
     }
     hashqueue = (HashQueue*) threadqueue;
 
-    Thread* dequeued = threadqueue -> dequeue(threadqueue);
+    struct thread* dequeued = threadqueue -> dequeue(threadqueue);
     assert(dequeued -> id == 128);
 
     // All threads shifted down
@@ -437,7 +437,7 @@ static void removeByIDCorrectElement(void) {
         threadqueue = result.queue;
     }
 
-    Thread *removed = threadqueue -> removeByID(5, threadqueue);
+    struct thread *removed = threadqueue -> removeByID(5, threadqueue);
     assert(removed -> id == 5);
 
     ++tests_passed;
@@ -480,7 +480,7 @@ static void removeByIDNotFound(void) {
         threadqueue = result.queue;
     }
 
-    Thread *found = threadqueue -> removeByID(42, threadqueue);
+    struct thread *found = threadqueue -> removeByID(42, threadqueue);
     assert(found == NULL);
     assert(threadqueue -> size(threadqueue) == 10);
 
@@ -604,9 +604,9 @@ static void removeByIDTailTableAmended(void) {
 
     If we remove id 128, we should expect:
 
-    -   Thread id 256 (slot 2) should move to slot 1 (just vacated by id 128)
-    -   Thread id 1 (slot 4) should move to slot 2 (just vacated by id 256)
-    -   Thread id 129 (slot 5) should move to slot 4 (just vacated by id 1)
+    -   struct thread id 256 (slot 2) should move to slot 1 (just vacated by id 128)
+    -   struct thread id 1 (slot 4) should move to slot 2 (just vacated by id 256)
+    -   struct thread id 129 (slot 5) should move to slot 4 (just vacated by id 1)
     -   slot 5 should be empty
 
 */
@@ -641,7 +641,7 @@ static void removeByIDTableRepairTest(void) {
 /*
     Enqueueing 124, 252, 380, 508, 0, 636 should give:
 
-        Table slot  | Thread ID
+        Table slot  | struct thread ID
             0           0
             1           636
 
@@ -652,7 +652,7 @@ static void removeByIDTableRepairTest(void) {
 
     - removeByID(380) should force wraparound to give
 
-    Table slot  | Thread ID
+    Table slot  | struct thread ID
             0           0
             1           -
 
@@ -665,15 +665,15 @@ static void removeByIDTableRepairTest(void) {
 
 static void removeByIDTableRepairWrapAround(void) {
     // Setup
-    Thread* test_threads[6];
+    struct thread* test_threads[6];
 
-    test_threads[0] = malloc(sizeof(Thread));
+    test_threads[0] = malloc(sizeof(struct thread));
     if (test_threads[0] != NULL) {
         test_threads[0] -> id = 0;
     }
 
     for (int i = 1; i < 6; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] != NULL) {
             test_threads[i] -> id = 128 * (i-1) + 124;
         }
@@ -705,7 +705,7 @@ static void removeByIDTableRepairWrapAround(void) {
     threadqueue -> removeByID(380, threadqueue);
 
     /*
-        508 moves into slot 126, vacated by removed Thread 380
+        508 moves into slot 126, vacated by removed struct thread 380
         636 moves into slot 127, (wrapped back around), vacated by 508
     */
     assert(hashqueue -> table[0] -> t -> id == 0);
@@ -742,10 +742,10 @@ static void removeByIDLoneElement(void) {
 
 static void removeByIDDuplicateIDs(void) {
     // IDs 0, 1, 2, 0
-    Thread* test_threads[4];
+    struct thread* test_threads[4];
 
     for (int i = 0; i < 4; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] == NULL) {
             printf("mem alloc failed\n");
             assert(1==0);
@@ -780,10 +780,10 @@ static void removeByIDDuplicateIDs(void) {
 }
 
 static void removeByIDTableIndicesUpdated1(void) {
-    Thread* test_threads[8];
+    struct thread* test_threads[8];
 
     for (int i = 0; i < 8; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] == NULL) {
             printf("Mem alloc failed.\n");
             assert(1==0);
@@ -846,10 +846,10 @@ static void removeByIDTableIndicesUpdated1(void) {
 }
 
 static void removeByIDTableIndicesUpdated2(void) {
-    Thread* test_threads[6];
+    struct thread* test_threads[6];
 
     for (int i = 0; i < 6; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] == NULL) {
             printf("Mem alloc failed.\n");
             assert(1==0);
@@ -897,10 +897,10 @@ static void removeByIDTableIndicesUpdated2(void) {
 }
 
 static void removeByIDCorrectLocationsAndPointers(void) {
-    Thread* test_threads[5];
+    struct thread* test_threads[5];
 
     for (int i = 0; i < 5; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] == NULL) {
             printf("Mem alloc failed.\n");
             assert(1==0);
@@ -995,7 +995,7 @@ static void removeByIDCorrectLocationsAndPointers(void) {
 */
 
 static void getByIDFalseReturnsNull(void) {
-    Thread* retrieved = threadqueue -> getByID(0, threadqueue);
+    struct thread* retrieved = threadqueue -> getByID(0, threadqueue);
     assert(retrieved == NULL);
 
     ++tests_passed;
@@ -1005,7 +1005,7 @@ static void getByIDReturnsCorrect(void) {
     QueueResultPair result = threadqueue -> enqueue(threads[10], threadqueue);
     threadqueue = result.queue;
 
-    Thread* retrieved = threadqueue -> getByID(10, threadqueue);
+    struct thread* retrieved = threadqueue -> getByID(10, threadqueue);
     assert(retrieved != NULL);
     assert(retrieved -> id == 10);
 
@@ -1016,7 +1016,7 @@ static void getByIDNoModifications(void) {
     QueueResultPair result = threadqueue -> enqueue(threads[10], threadqueue);
     threadqueue = result.queue;
 
-    Thread* retrieved = threadqueue -> getByID(10, threadqueue);
+    struct thread* retrieved = threadqueue -> getByID(10, threadqueue);
     assert(threadqueue -> size(threadqueue) == 1);
     assert(threadqueue -> isEmpty(threadqueue) == 0);
 
@@ -1027,8 +1027,8 @@ static void getByIDTwiceSameElementFound(void) {
     QueueResultPair result = threadqueue -> enqueue(threads[10], threadqueue);
     threadqueue = result.queue;
 
-    Thread* retrieved1 = threadqueue -> getByID(10, threadqueue);
-    Thread* retrieved2 = threadqueue -> getByID(10, threadqueue);
+    struct thread* retrieved1 = threadqueue -> getByID(10, threadqueue);
+    struct thread* retrieved2 = threadqueue -> getByID(10, threadqueue);
     assert(retrieved1 == retrieved2);
     
     ++tests_passed;
@@ -1046,8 +1046,8 @@ static void getByIDDuplicateElemsSameFound(void) {
         assert(hashqueue -> table[i] -> t -> id == 0);
     }
 
-    Thread* retrieved1 = threadqueue -> getByID(0, threadqueue);
-    Thread* retrieved2 = threadqueue -> getByID(0, threadqueue);
+    struct thread* retrieved1 = threadqueue -> getByID(0, threadqueue);
+    struct thread* retrieved2 = threadqueue -> getByID(0, threadqueue);
     assert(retrieved1 == retrieved2);
     
     ++tests_passed;
@@ -1090,9 +1090,9 @@ static void containsFalseAfterRemoveByID(void) {
 
 static void containsContiguousBlockTest(void) {
     // Setup
-    Thread* test_threads[4];
+    struct thread* test_threads[4];
     for (int i = 0; i < 4; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] == NULL) {
             printf("Mem alloc failed.\n");
             assert(1==0);
@@ -1194,9 +1194,9 @@ static void newTableQPointersCorrect(void) {
 
 static void correctRehashLocations(void) {
     // IDs [64, 191]
-    Thread* test_threads[128];
+    struct thread* test_threads[128];
     for (int i = 0; i < 128; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] == NULL) {
             printf("mem alloc failed\n");
             assert(1==0);
@@ -1254,9 +1254,9 @@ static void correctRehashLocations(void) {
 
 static void rehashTableFieldsUpdated(void) {
     // IDs [64, 191]
-    Thread* test_threads[128];
+    struct thread* test_threads[128];
     for (int i = 0; i < 128; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] == NULL) {
             printf("mem alloc failed\n");
             assert(1==0);
@@ -1301,9 +1301,9 @@ static void rehashTableFieldsUpdated(void) {
 
 static void rehashFullChainMaintained(void) {
     // IDs [64, 191]
-    Thread* test_threads[128];
+    struct thread* test_threads[128];
     for (int i = 0; i < 128; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] == NULL) {
             printf("mem alloc failed\n");
             assert(1==0);
@@ -1443,10 +1443,10 @@ static void isEmptyPointersAgreeNegative(void) {
 
 
 static void tableRepairNoMoveTest1(void) {
-    Thread* test_threads[3];
+    struct thread* test_threads[3];
 
     for (int i = 0; i < 3; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] == NULL) {
             printf("mem alloc failed\n");
             assert(1==0);
@@ -1484,10 +1484,10 @@ static void tableRepairNoMoveTest1(void) {
 
 
 static void tableRepairNoMoveTest2(void) {
-    Thread* test_threads[3];
+    struct thread* test_threads[3];
 
     for (int i = 0; i < 3; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] == NULL) {
             printf("mem alloc failed\n");
             assert(1==0);
@@ -1533,10 +1533,10 @@ static void tableRepairNoMoveTest2(void) {
 }
 
 static void tableRepairNoMoveTest3(void) {
-    Thread* test_threads[3];
+    struct thread* test_threads[3];
 
     for (int i = 0; i < 3; ++i) {
-        test_threads[i] = malloc(sizeof(Thread));
+        test_threads[i] = malloc(sizeof(struct thread));
         if (test_threads[i] == NULL) {
             printf("mem alloc failed\n");
             assert(1==0);
@@ -1616,7 +1616,7 @@ static void iteratorCorrectNext(void) {
     Iterator *iterator = threadqueue -> iterator(threadqueue);
 
     assert(iterator -> hasNext(iterator) != 0);         // next exists
-    assert(iterator -> next(iterator) == threads[0]);   // correct Thread reference returned
+    assert(iterator -> next(iterator) == threads[0]);   // correct struct thread reference returned
     assert(iterator -> hasNext(iterator) == 0);         // no further next element
 
     free(iterator);
@@ -1632,7 +1632,7 @@ static void iteratorExampleUsage(void) {
     }
 
     Iterator *it = threadqueue -> iterator(threadqueue);
-    Thread *current_thread;
+    struct thread *current_thread;
 
     int idx = 0;
     while (it -> hasNext(it)) {

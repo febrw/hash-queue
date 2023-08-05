@@ -8,7 +8,7 @@
 
 static ThreadQueue *threadqueue;
 static HashQueue *hashqueue;
-static Thread *threads[MAX_THREADS];
+static struct thread *threads[MAX_THREADS];
 
 static void setup() {
     threadqueue = (ThreadQueue*) new_HashQueue();
@@ -16,7 +16,7 @@ static void setup() {
     //hashqueue -> getHash = IDHash;
 
     for (int i = 0; i < MAX_THREADS; ++i) {
-        threads[i] = malloc(sizeof(Thread));
+        threads[i] = malloc(sizeof(struct thread));
         if (threads[i] == NULL) {
             printf("malloc failed");
             exit(0);
@@ -43,21 +43,21 @@ static void enqueueAll(void) {
 }
 
 static void removeByIDAll(void) {
-    Thread *removed;
+    struct thread *removed;
     for (int i = 0; i < MAX_THREADS; ++i) {
         removed = threadqueue -> removeByID(i, threadqueue);
     }
 }
 
 static void removeByIDReversedAll(void) {
-    Thread *removed;
+    struct thread *removed;
     for (int i = MAX_THREADS - 1; i >= 0; --i) {
         removed = threadqueue -> removeByID(i, threadqueue);
     }
 }
 
 static void dequeueAll(void) {
-    Thread *dequeued;
+    struct thread *dequeued;
     for (int i = 0; i < MAX_THREADS; ++i) {
         dequeued = threadqueue -> dequeue(threadqueue);
     }
@@ -161,7 +161,7 @@ static void t2(void) {
 
     
 
-    Thread *dqd_threads[test_size];
+    struct thread *dqd_threads[test_size];
     for (int i = 0; i < test_size; ++i) {
         dqd_threads[i] = threadqueue -> dequeue(threadqueue);
         
@@ -230,7 +230,7 @@ static void t3(void) {
 static void t4(void) {
     enqueueAll();
 
-    Thread *dqd;
+    struct thread *dqd;
     for (int i = 0; i < MAX_THREADS; ++i) {
         dqd = threadqueue -> dequeue(threadqueue);
         if (dqd -> id != i) {
@@ -243,7 +243,7 @@ static void t4(void) {
 static void t5(void) {
     enqueueAll();
 
-    Thread *dqd;
+    struct thread *dqd;
     int table_index;
     int bad_counts = 0;
     for (int i = 0; i < MAX_THREADS; ++i) {
@@ -274,7 +274,7 @@ static void t6(void) {
     int table_idx = hashqueue -> getTableIndexByID(0, threadqueue);
     //assert(table_idx == 34491);
 
-    Thread *dqd = threadqueue -> dequeue(threadqueue);
+    struct thread *dqd = threadqueue -> dequeue(threadqueue);
 
     int occupied_counts2 = 0;
     for (int i = 0; i < hashqueue -> capacity; ++i) {

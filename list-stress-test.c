@@ -6,13 +6,13 @@
 #include "hash-queue.h"
 #include "list.h"
 
-static Thread *threads[65535];
+static struct thread *threads[65535];
 static LIST_HEAD(thread_list);
 
 
 static void setup() {
     for (int i = 0; i < 65535; ++i) {
-        threads[i] = malloc(sizeof(Thread));
+        threads[i] = malloc(sizeof(struct thread));
         if (threads[i] == NULL) {
             printf("malloc failed");
             exit(0);
@@ -30,7 +30,7 @@ static void wrapUp() {
 
 
 static void enqueueAll(void) {
-    Thread *thread;
+    struct thread *thread;
     for (int i = 0; i < 65535; ++i) {
         thread = threads[i];
         list_add_tail(&thread->thread_list, &thread_list);
@@ -38,13 +38,13 @@ static void enqueueAll(void) {
 }
 
 static void removeByIDAll(void) {
-    Thread *thread;
+    struct thread *thread;
     struct list_head *list_head;
     for (int i = 0; i < 65535; ++i) {
 
         list_for_each(list_head, &thread_list)
         {
-            thread = list_entry(list_head, Thread, thread_list);
+            thread = list_entry(list_head, struct thread, thread_list);
             if(thread->id == i)
             {
                 goto found;
@@ -56,13 +56,13 @@ static void removeByIDAll(void) {
 }
 
 static void removeByIDReversedAll(void) {
-    Thread *thread;
+    struct thread *thread;
     struct list_head *list_head;
     for (int i = 65534; i >= 0; --i) {
 
         list_for_each(list_head, &thread_list)
         {
-            thread = list_entry(list_head, Thread, thread_list);
+            thread = list_entry(list_head, struct thread, thread_list);
             if(thread->id == i)
             {
                 goto found;
@@ -75,13 +75,13 @@ static void removeByIDReversedAll(void) {
 
 
 static void containsAll(void) {
-    Thread *thread;
+    struct thread *thread;
     struct list_head *list_head;
     for (int i = 0; i < 65535; ++i) {
 
         list_for_each(list_head, &thread_list)
         {
-            thread = list_entry(list_head, Thread, thread_list);
+            thread = list_entry(list_head, struct thread, thread_list);
             if(thread->id == i)
             {
                 goto found;
@@ -93,13 +93,13 @@ static void containsAll(void) {
 }
 
 static void containsAllReversed(void) {
-    Thread *thread;
+    struct thread *thread;
     struct list_head *list_head;
     for (int i = 65534; i >= 0; --i) {
 
         list_for_each(list_head, &thread_list)
         {
-            thread = list_entry(list_head, Thread, thread_list);
+            thread = list_entry(list_head, struct thread, thread_list);
             if(thread->id == i)
             {
                 goto found;

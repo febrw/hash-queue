@@ -17,7 +17,6 @@ typedef unsigned char u8;
 #define MAX_THREADS 65536
 
 
-typedef struct Thread Thread;
 typedef struct Entry Entry;
 typedef struct HashQueue HashQueue;
 typedef struct QueueResultPair QueueResultPair;
@@ -25,7 +24,7 @@ typedef struct ThreadQueue ThreadQueue;
 typedef struct Iterator Iterator;
 
 
-struct Thread {
+struct thread {
     u16 id;
     struct list_head thread_list;
 };
@@ -33,13 +32,13 @@ struct Thread {
 struct Entry {
     Entry *prev;
     Entry *next;
-    Thread *t;          // value
+    struct thread *t;          // value
     u32 table_index;    // allows dequeuing without search
 };
 
 struct Iterator {
     int (*hasNext) (Iterator*);
-    Thread* (*next) (Iterator*);
+    struct thread* (*next) (Iterator*);
     Entry *currentEntry;
 };
 
@@ -56,12 +55,12 @@ struct QueueResultPair {
 
 struct ThreadQueue {
     // Common Queue Interface
-    Thread* (*dequeue) (ThreadQueue*);                     // Input: queue. Output: dequeued element       
+    struct thread* (*dequeue) (ThreadQueue*);                     // Input: queue. Output: dequeued element       
     int (*contains) (u16, ThreadQueue*);                   // success/failure return value
-    QueueResultPair (*enqueue) (Thread*, ThreadQueue*);    // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
+    QueueResultPair (*enqueue) (struct thread*, ThreadQueue*);    // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
     int (*isEmpty) (ThreadQueue*);                         // success/failure return value
-    Thread* (*removeByID) (u16, ThreadQueue*);             // Inputs: ID, queue. Output: removed element
-    Thread* (*getByID) (u16, ThreadQueue*);                // Returns a reference to the Thread, but does not remove
+    struct thread* (*removeByID) (u16, ThreadQueue*);             // Inputs: ID, queue. Output: removed element
+    struct thread* (*getByID) (u16, ThreadQueue*);                // Returns a reference to the struct thread, but does not remove
     Iterator* (*iterator)(ThreadQueue*);                   // Constructs an iterator over the ThreadQueue
     int (*size) (ThreadQueue*);                            // Returns the number of elements in the ThreadQueue
     void (*freeQueue) (ThreadQueue*);
@@ -70,12 +69,12 @@ struct ThreadQueue {
 
 struct HashQueue {
     // Common Queue Interface
-    Thread* (*dequeue) (ThreadQueue*);                     // Input: queue. Output: dequeued element
+    struct thread* (*dequeue) (ThreadQueue*);                     // Input: queue. Output: dequeued element
     int (*contains) (u16, ThreadQueue*);                   // success/failure return value
-    QueueResultPair (*enqueue) (Thread*, ThreadQueue*);    // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
+    QueueResultPair (*enqueue) (struct thread*, ThreadQueue*);    // Inputs: enqueue element, queue. Output: queue pointer, enqueue success/failure
     int (*isEmpty) (ThreadQueue*);                         // success/failure return value
-    Thread* (*removeByID) (u16, ThreadQueue*);             // Inputs: ID, queue. Output: removed element
-    Thread* (*getByID) (u16, ThreadQueue*);                // Returns a reference to the Thread, but does not remove
+    struct thread* (*removeByID) (u16, ThreadQueue*);             // Inputs: ID, queue. Output: removed element
+    struct thread* (*getByID) (u16, ThreadQueue*);                // Returns a reference to the struct thread, but does not remove
     Iterator* (*iterator)(ThreadQueue*);
     int (*size) (ThreadQueue*);                            // Returns the number of elements in the HashQueue
     void (*freeQueue) (ThreadQueue*);
