@@ -263,9 +263,7 @@ static Entry *HashQueue_getEntryByID(u16 thread_id, ThreadQueue* queue) {
     return NULL;
 }
 
-//----------------------------------- CONSTRUCTORS + DESTRUCTOR -----------------------------------
-
- // Iterator functions
+//----------------------------------- ITERATOR FUNCTIONS  -----------------------------------------
  static Thread* Iterator_next(Iterator *iterator) {
     Entry *current = iterator -> currentEntry;
     iterator -> currentEntry = iterator -> currentEntry -> next;
@@ -289,6 +287,8 @@ static Iterator* new_Iterator(ThreadQueue* queue) {
 
     return iterator;
 }
+
+//----------------------------------- CONSTRUCTORS + DESTRUCTOR -----------------------------------
 
 /*
     - Frees the entries in a table provided they are marked as occupied

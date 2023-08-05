@@ -81,7 +81,7 @@ static double timeFunction(void (*testFunction) (void)) {
     clock_t begin = clock();
     testFunction();
     clock_t end = clock();
-    return (double) (end - begin) * 1000 / CLOCKS_PER_SEC;
+    return ((double) (end - begin)  * 1000) / CLOCKS_PER_SEC;
 }
 
 
