@@ -67,6 +67,7 @@ static void containsAll(void) {
     int contains;
     for (int i = 0; i < MAX_THREADS; ++i) {
         contains = threadqueue -> contains(i, threadqueue);
+        if (!contains) printf("oh no. %d should be here\n", i);
     }
 }
 
@@ -74,6 +75,7 @@ static void containsAllReversed(void) {
     int contains;
     for (int i = MAX_THREADS - 1; i >= 0; --i) {
         contains = threadqueue -> contains(i, threadqueue);
+        if (!contains) printf("oh no. %d should be here\n", i);
     }
 }
 
@@ -100,9 +102,9 @@ static void t1(void) {
         threadqueue = result.queue;
         hashqueue = (HashQueue*) threadqueue;
 
-        u16 ideal_loc = FNV1AHash(i) & (hashqueue -> capacity - 1);
-        u16 actual_loc = hashqueue -> getTableIndexByID(i, threadqueue);
-        u16 entry_belief = hashqueue -> getEntryByID(i, threadqueue) -> table_index;
+        u32 ideal_loc = FNV1AHash(i) & (hashqueue -> capacity - 1);
+        u32 actual_loc = hashqueue -> getTableIndexByID(i, threadqueue);
+        u32 entry_belief = hashqueue -> getEntryByID(i, threadqueue) -> table_index;
 
         
 

@@ -6,12 +6,12 @@
 #include "hash-queue.h"
 #include "list.h"
 
-static Thread *threads[65535];
+static Thread *threads[MAX_THREADS];
 static LIST_HEAD(thread_list);
 
 
 static void setup() {
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         threads[i] = malloc(sizeof(Thread));
         if (threads[i] == NULL) {
             printf("malloc failed");
@@ -23,7 +23,7 @@ static void setup() {
 }
 
 static void wrapUp() {
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         free(threads[i]);
     }
 }
@@ -31,7 +31,7 @@ static void wrapUp() {
 
 static void enqueueAll(void) {
     Thread *thread;
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
         thread = threads[i];
         list_add_tail(&thread->thread_list, &thread_list);
     }
@@ -40,7 +40,7 @@ static void enqueueAll(void) {
 static void removeByIDAll(void) {
     Thread *thread;
     struct list_head *list_head;
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
 
         list_for_each(list_head, &thread_list)
         {
@@ -58,7 +58,7 @@ static void removeByIDAll(void) {
 static void removeByIDReversedAll(void) {
     Thread *thread;
     struct list_head *list_head;
-    for (int i = 65534; i >= 0; --i) {
+    for (int i = MAX_THREADS - 1; i >= 0; --i) {
 
         list_for_each(list_head, &thread_list)
         {
@@ -77,7 +77,7 @@ static void removeByIDReversedAll(void) {
 static void containsAll(void) {
     Thread *thread;
     struct list_head *list_head;
-    for (int i = 0; i < 65535; ++i) {
+    for (int i = 0; i < MAX_THREADS; ++i) {
 
         list_for_each(list_head, &thread_list)
         {
@@ -95,7 +95,7 @@ static void containsAll(void) {
 static void containsAllReversed(void) {
     Thread *thread;
     struct list_head *list_head;
-    for (int i = 65534; i >= 0; --i) {
+    for (int i = MAX_THREADS - 1; i >= 0; --i) {
 
         list_for_each(list_head, &thread_list)
         {
